@@ -3,7 +3,7 @@
 PORTNAME=	hv-kvp
 PORTVERSION=	1.0
 CATEGORIES=	kld
-MASTER_SITES=	https://github.com/FreeBSDonHyper-V/Hyperv-Ports/raw/ports/hv-kvp/
+MASTER_SITES=	https://github.com/FreeBSDonHyper-V/hv-kvp/raw/ports/hv-kvp/
 
 MAINTAINER=	bsdic@microsoft.com
 COMMENT=	Hyper-V KVP Integration Components
