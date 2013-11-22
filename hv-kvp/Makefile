@@ -14,6 +14,8 @@ CC=clang
 CXX=clang++
 CPP=clang-cpp
 
+NO_STAGE = yes
+
 ONLY_FOR_ARCHS=	amd64 i386
 
 pre-install:
