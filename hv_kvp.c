@@ -711,7 +711,7 @@ hv_kvp_respond_host(int error)
 
 	if (!hv_kvp_transaction_active()) {
 		//TODO: Triage why we are here.
-		//printf("No active transaction returning\n");
+		printf("No active transaction returning\n");
 		return;
 	}
 
@@ -802,6 +802,7 @@ void hv_kvp_callback(void *context)
 				TIMEOUT_TASK_INIT(taskqueue_thread, &kvp_msg_state.delay_task, 0, hv_kvp_enqueue_timeout, NULL);
 			}
 		} else {
+			printf(" invaild msg \n");
 			ret = HV_KVP_E_FAIL;
 		}
 	} else {
@@ -927,7 +928,7 @@ hv_kvp_dev_daemon_write(struct cdev *dev __unused, struct uio *uio, int ioflag _
 			register_done = TRUE;
 			kvp_msg_state.kvp_ready = TRUE;
 		}else {
-			uprintf(" KVP Registeration Failed\n");
+			printf(" KVP Registeration Failed\n");
 			return (error);
 		}
 	}
@@ -935,9 +936,11 @@ hv_kvp_dev_daemon_write(struct cdev *dev __unused, struct uio *uio, int ioflag _
 	conv_usermsg_to_hostmsg();
 
 	if (taskqueue_cancel_timeout(taskqueue_thread, &kvp_msg_state.delay_task, NULL) == 0) {
+		printf("in tine message\n");
 		hv_kvp_respond_host(KVP_SUCCESS);
+	}else {
+		printf("timed out task \n");
 	}
-	
 	return (error);
 }
 
@@ -950,7 +953,7 @@ hv_kvp_init(hv_vmbus_service *srv)
 
 	work_queue = hv_work_queue_create("KVP Service");
 	if (work_queue == NULL) {
-		uprintf("hv_kvp_init: Work queue alloc failed\n");
+		printf("hv_kvp_init: Work queue alloc failed\n");
 		error = ENOMEM;
 		goto Finish;
 	}
