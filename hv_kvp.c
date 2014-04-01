@@ -927,7 +927,7 @@ hv_kvp_dev_daemon_write(struct cdev *dev __unused, struct uio *uio, int ioflag _
 			register_done = TRUE;
 			kvp_msg_state.kvp_ready = TRUE;
 		}else {
-			uprintf(" KVP Registeration Failed\n");
+			uprintf(" KVP Registration Failed\n");
 			return (error);
 		}
 	}
