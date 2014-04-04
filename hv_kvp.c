@@ -649,17 +649,17 @@ hv_kvp_convert_usermsg_to_hostmsg(void)
 		host_exchg_data = &hmsg->body.kvp_enum_data.data;
 		key_name = umsg->body.kvp_enum_data.data.key;
 		hkey_len = hv_kvp_convert8_to_16((uint16_t *)host_exchg_data->key,
-			((HV_KVP_EXCHANGE_MAX_KEY_SIZE / 2) - 2),
-			key_name, strlen(key_name),
-			&utf_err);
+				((HV_KVP_EXCHANGE_MAX_KEY_SIZE / 2) - 2),
+				key_name, strlen(key_name),
+				&utf_err);
 		/* utf16 encoding */
 		host_exchg_data->key_size = 2 * (hkey_len + 1);
 		value = umsg->body.kvp_enum_data.data.msg_value.value;
-		hvalue_len =
-		    hv_kvp_convert8_to_16((uint16_t *)host_exchg_data->msg_value.value,
-			((HV_KVP_EXCHANGE_MAX_VALUE_SIZE / 2) - 2),
-			value, strlen(value),
-			&utf_err);
+		hvalue_len = hv_kvp_convert8_to_16((
+				uint16_t *)host_exchg_data->msg_value.value,
+				((HV_KVP_EXCHANGE_MAX_VALUE_SIZE / 2) - 2),
+				value, strlen(value),
+				&utf_err);
 		host_exchg_data->value_size = 2 * (hvalue_len + 1);
 		host_exchg_data->value_type = HV_REG_SZ;
 
@@ -672,10 +672,10 @@ hv_kvp_convert_usermsg_to_hostmsg(void)
 		host_exchg_data = &hmsg->body.kvp_get.data;
 		value = umsg->body.kvp_get.data.msg_value.value;
 		hvalue_len = hv_kvp_convert8_to_16(
-			(uint16_t *)host_exchg_data->msg_value.value,
-			((HV_KVP_EXCHANGE_MAX_VALUE_SIZE / 2) - 2),
-			value, strlen(value),
-			&utf_err);
+				(uint16_t *)host_exchg_data->msg_value.value,
+				((HV_KVP_EXCHANGE_MAX_VALUE_SIZE / 2) - 2),
+				value, strlen(value),
+				&utf_err);
 		/* Convert value size to uft16 */
 		host_exchg_data->value_size = 2 * (hvalue_len + 1);
 		/* Use values by string */
@@ -781,7 +781,8 @@ void hv_kvp_callback(void *context)
 
 		if ((ret == 0) && (recvlen > 0)) {
 			icmsghdrp = (struct hv_vmbus_icmsg_hdr *)
-			    &kvp_buf[sizeof(struct hv_vmbus_pipe_hdr)];
+					&kvp_buf[sizeof(struct hv_vmbus_pipe_hdr)];
+			
 			hv_kvp_transaction_init(recvlen, channel, requestid, kvp_buf);
 
 			if (icmsghdrp->icmsgtype == HV_ICMSGTYPE_NEGOTIATE) {
@@ -789,7 +790,7 @@ void hv_kvp_callback(void *context)
 				hv_kvp_respond_host(ret);
 			}else {
 				hv_kvp_process_hostmsg();
-				/* TIMEOUT Work */
+				/* time_out task */
 				TIMEOUT_TASK_INIT(taskqueue_thread, &delay_task, 0, hv_kvp_enqueue_timeout, NULL);
 			}
 		} else 
@@ -803,7 +804,9 @@ void hv_kvp_callback(void *context)
 
 
 /*
- * hv_kvp_dev initialized
+ * This function is called by the hv_kvp_init -
+ * creates character device hv_kvp_dev 
+ * allocates memory to hv_kvp_dev_buf
  *
  */
 static int
@@ -815,13 +818,13 @@ hv_kvp_dev_init(void)
 	sema_init(&kvp_msg_state.dev_sema, 0, "hv_kvp device semaphore");
 	/* create character device */
 	error = make_dev_p(MAKEDEV_CHECKNAME | MAKEDEV_WAITOK,
-					   &hv_kvp_dev,
-					   &hv_kvp_cdevsw,
-					   0,
-					   UID_ROOT,
-					   GID_WHEEL,
-					   0600,
-					   "hv_kvp_dev");
+			   &hv_kvp_dev,
+			   &hv_kvp_cdevsw,
+			   0,
+			   UID_ROOT,
+			   GID_WHEEL,
+			   0600,
+			   "hv_kvp_dev");
 					   
 	if (error != 0)
 		return (error);
@@ -834,8 +837,8 @@ hv_kvp_dev_init(void)
 
 
 /*
- * This function is called by the hv_kvp_init -
- * initialize character device
+ * This function is called by the hv_kvp_deinit -
+ * destroy character device
  */
 static void
 hv_kvp_dev_destroy(void)
@@ -866,6 +869,12 @@ hv_kvp_dev_close(struct cdev *dev __unused, int fflag __unused, int devtype __un
 }
 
 
+/*
+ * hv_kvp_daemon read invokes this function
+ * acts as a send to daemon
+ *
+ */
+
 static int
 hv_kvp_dev_daemon_read(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
 {
@@ -892,7 +901,7 @@ hv_kvp_dev_daemon_read(struct cdev *dev __unused, struct uio *uio, int ioflag __
 
 /*
  * hv_kvp_daemon write invokes this function
- * this function replaces - receive
+ * acts as a recevie from daemon
  *
  */
 static int
@@ -930,6 +939,11 @@ hv_kvp_dev_daemon_write(struct cdev *dev __unused, struct uio *uio, int ioflag _
 }
 
 
+/* 
+ * hv_kvp initialization function 
+ * called from hv_util service.
+ *
+ */
 int
 hv_kvp_init(hv_vmbus_service *srv)
 {
