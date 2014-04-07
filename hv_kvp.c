@@ -23,7 +23,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*-
  * Copyright (c) 2007 The NetBSD Foundation, Inc.
  * All rights reserved.
@@ -347,7 +346,8 @@ hv_kvp_convert16_to_8(char *dst, size_t dst_len, const uint16_t *src, size_t src
 			}
 			spos++;
 			CHECK_LENGTH(4);
-			c = (((src[spos] & 0x3ff) << 10) | (src[spos + 1] & 0x3ff)) + 0x10000;
+			c = (((src[spos] & 0x3ff) << 10) | (src[spos + 1] & 0x3ff)) +
+				0x10000;
 			ADD_BYTE(0xf0 | (c >> 18));
 			ADD_BYTE(0x80 | ((c >> 12) & 0x3f));
 			ADD_BYTE(0x80 | ((c >> 6) & 0x3f));
@@ -383,30 +383,30 @@ hv_kvp_convert_utf8_ipinfo_to_utf16(struct hv_kvp_msg *umsg,
 	int err_ip, err_subnet, err_gway, err_dns, err_adap;
 
 	hv_kvp_convert8_to_16((uint16_t *)host_ip_msg->kvp_ip_val.ip_addr,
-		MAX_IP_ADDR_SIZE,
-		(char *)umsg->body.kvp_ip_val.ip_addr,
-		strlen((char *)umsg->body.kvp_ip_val.ip_addr),
-		&err_ip);
+	    MAX_IP_ADDR_SIZE,
+	    (char *)umsg->body.kvp_ip_val.ip_addr,
+	    strlen((char *)umsg->body.kvp_ip_val.ip_addr),
+	    &err_ip);
 	hv_kvp_convert8_to_16((uint16_t *)host_ip_msg->kvp_ip_val.sub_net,
-		MAX_IP_ADDR_SIZE,
-		(char *)umsg->body.kvp_ip_val.sub_net,
-		strlen((char *)umsg->body.kvp_ip_val.sub_net),
-		&err_subnet);
+	    MAX_IP_ADDR_SIZE,
+	    (char *)umsg->body.kvp_ip_val.sub_net,
+	    strlen((char *)umsg->body.kvp_ip_val.sub_net),
+	    &err_subnet);
 	hv_kvp_convert8_to_16((uint16_t *)host_ip_msg->kvp_ip_val.gate_way,
-		MAX_GATEWAY_SIZE,
-		(char *)umsg->body.kvp_ip_val.gate_way,
-		strlen((char *)umsg->body.kvp_ip_val.gate_way),
-		&err_gway);
+	    MAX_GATEWAY_SIZE,
+	    (char *)umsg->body.kvp_ip_val.gate_way,
+	    strlen((char *)umsg->body.kvp_ip_val.gate_way),
+	    &err_gway);
 	hv_kvp_convert8_to_16((uint16_t *)host_ip_msg->kvp_ip_val.dns_addr,
-		MAX_IP_ADDR_SIZE,
-		(char *)umsg->body.kvp_ip_val.dns_addr,
-		strlen((char *)umsg->body.kvp_ip_val.dns_addr),
-		&err_dns);
+	    MAX_IP_ADDR_SIZE,
+	    (char *)umsg->body.kvp_ip_val.dns_addr,
+	    strlen((char *)umsg->body.kvp_ip_val.dns_addr),
+	    &err_dns);
 	hv_kvp_convert8_to_16((uint16_t *)host_ip_msg->kvp_ip_val.adapter_id,
-		MAX_IP_ADDR_SIZE,
-		(char *)umsg->body.kvp_ip_val.adapter_id,
-		strlen((char *)umsg->body.kvp_ip_val.adapter_id),
-		&err_adap);
+	    MAX_IP_ADDR_SIZE,
+	    (char *)umsg->body.kvp_ip_val.adapter_id,
+	    strlen((char *)umsg->body.kvp_ip_val.adapter_id),
+	    &err_adap);
 	
 	host_ip_msg->kvp_ip_val.dhcp_enabled = umsg->body.kvp_ip_val.dhcp_enabled;
 	host_ip_msg->kvp_ip_val.addr_family = umsg->body.kvp_ip_val.addr_family;
@@ -450,15 +450,15 @@ hv_kvp_convert_utf16_ipinfo_to_utf8(struct hv_kvp_ip_msg *host_ip_msg,
 
 	/* IP Address */
 	hv_kvp_convert16_to_8((char *)umsg->body.kvp_ip_val.ip_addr,
-		MAX_IP_ADDR_SIZE,
-		(uint16_t *)host_ip_msg->kvp_ip_val.ip_addr,
-		MAX_IP_ADDR_SIZE, &err_ip);
+	    MAX_IP_ADDR_SIZE,
+	    (uint16_t *)host_ip_msg->kvp_ip_val.ip_addr,
+	    MAX_IP_ADDR_SIZE, &err_ip);
 
 	/* Adapter ID : GUID */
 	hv_kvp_convert16_to_8((char *)umsg->body.kvp_ip_val.adapter_id,
-		MAX_ADAPTER_ID_SIZE,
-		(uint16_t *)host_ip_msg->kvp_ip_val.adapter_id,
-		MAX_ADAPTER_ID_SIZE, &err_adap);
+	    MAX_ADAPTER_ID_SIZE,
+	    (uint16_t *)host_ip_msg->kvp_ip_val.adapter_id,
+	    MAX_ADAPTER_ID_SIZE, &err_adap);
 
 	if (devclass_get_devices(devclass_find("hn"), &devs, &devcnt) == 0) {
 		for (devcnt = devcnt - 1; devcnt >= 0; devcnt--) {
@@ -516,7 +516,8 @@ hv_kvp_convert_hostmsg_to_usermsg(void)
 {
 	int utf_err = 0;
 	uint32_t value_type;
-	struct hv_kvp_ip_msg *host_ip_msg = (struct hv_kvp_ip_msg *)kvp_msg_state.host_kvp_msg;
+	struct hv_kvp_ip_msg *host_ip_msg = (struct hv_kvp_ip_msg *)
+		kvp_msg_state.host_kvp_msg;
 
 	struct hv_kvp_msg *hmsg = kvp_msg_state.host_kvp_msg;
 	struct hv_kvp_msg *umsg = &hv_user_kvp_msg;
@@ -655,8 +656,8 @@ hv_kvp_convert_usermsg_to_hostmsg(void)
 		/* utf16 encoding */
 		host_exchg_data->key_size = 2 * (hkey_len + 1);
 		value = umsg->body.kvp_enum_data.data.msg_value.value;
-		hvalue_len = hv_kvp_convert8_to_16((
-				uint16_t *)host_exchg_data->msg_value.value,
+		hvalue_len = hv_kvp_convert8_to_16(
+				(uint16_t *)host_exchg_data->msg_value.value,
 				((HV_KVP_EXCHANGE_MAX_VALUE_SIZE / 2) - 2),
 				value, strlen(value),
 				&utf_err);
@@ -719,16 +720,16 @@ hv_kvp_respond_host(int error)
 	kvp_msg_state.in_progress = FALSE;
 	
 	error = hv_vmbus_channel_send_packet(kvp_msg_state.channelp,
-		kvp_msg_state.rcv_buf,
-		kvp_msg_state.host_msg_len, kvp_msg_state.host_msg_id,
-		HV_VMBUS_PACKET_TYPE_DATA_IN_BAND, 0);
+			kvp_msg_state.rcv_buf,
+			kvp_msg_state.host_msg_len, kvp_msg_state.host_msg_id,
+			HV_VMBUS_PACKET_TYPE_DATA_IN_BAND, 0);
 
 	if (error)
 		uprintf("hv_kvp_respond_host: sendpacket error:%d\n", error);
 }
 
 
-/**
+/*
  * This is the main kvp kernel process that interacts with both user daemon
  * and the host
  */
@@ -760,7 +761,8 @@ hv_kvp_enqueue_timeout(void *arg, int pending __unused)
 /*
  * Callback routine that gets called whenever there is a message from host
  */
-void hv_kvp_callback(void *context)
+void
+hv_kvp_callback(void *context)
 {
 	uint8_t *kvp_buf;
 	hv_vmbus_channel *channel = context;
@@ -791,7 +793,8 @@ void hv_kvp_callback(void *context)
 			}else {
 				hv_kvp_process_hostmsg();
 				/* time_out task */
-				TIMEOUT_TASK_INIT(taskqueue_thread, &delay_task, 0, hv_kvp_enqueue_timeout, NULL);
+				TIMEOUT_TASK_INIT(taskqueue_thread, &delay_task, 0,
+					hv_kvp_enqueue_timeout, NULL);
 			}
 		} else 
 			ret = HV_KVP_E_FAIL;
@@ -818,19 +821,19 @@ hv_kvp_dev_init(void)
 	sema_init(&kvp_msg_state.dev_sema, 0, "hv_kvp device semaphore");
 	/* create character device */
 	error = make_dev_p(MAKEDEV_CHECKNAME | MAKEDEV_WAITOK,
-			   &hv_kvp_dev,
-			   &hv_kvp_cdevsw,
-			   0,
-			   UID_ROOT,
-			   GID_WHEEL,
-			   0600,
-			   "hv_kvp_dev");
+			&hv_kvp_dev,
+			&hv_kvp_cdevsw,
+			0,
+			UID_ROOT,
+			GID_WHEEL,
+			0600,
+			"hv_kvp_dev");
 					   
 	if (error != 0)
 		return (error);
 
 	hv_kvp_dev_buf = malloc(sizeof(*hv_kvp_dev_buf), M_HV_KVP_DEV_BUF, M_WAITOK |
-		M_ZERO);
+				M_ZERO);
 
 	return (error);
 }
@@ -872,18 +875,16 @@ hv_kvp_dev_close(struct cdev *dev __unused, int fflag __unused, int devtype __un
 /*
  * hv_kvp_daemon read invokes this function
  * acts as a send to daemon
- *
  */
-
 static int
 hv_kvp_dev_daemon_read(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
 {
 	size_t amt;
-	int error;
+	int error = 0;
 
 	/* Check hv_kvp daemon registration status*/
 	if (!register_done)
-		return (0);
+		return (KVP_ERROR);
 
 	sema_wait(&kvp_msg_state.dev_sema);
 
@@ -902,7 +903,6 @@ hv_kvp_dev_daemon_read(struct cdev *dev __unused, struct uio *uio, int ioflag __
 /*
  * hv_kvp_daemon write invokes this function
  * acts as a recevie from daemon
- *
  */
 static int
 hv_kvp_dev_daemon_write(struct cdev *dev __unused, struct uio *uio, int ioflag __unused)
@@ -925,7 +925,7 @@ hv_kvp_dev_daemon_write(struct cdev *dev __unused, struct uio *uio, int ioflag _
 			register_done = TRUE;
 		else {
 			uprintf(" KVP Registration Failed\n");
-			return (error);
+			return (KVP_ERROR);
 		}
 	}
 
