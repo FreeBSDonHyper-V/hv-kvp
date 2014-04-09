@@ -1,0 +1,357 @@
+Index: etc/rc.d/Makefile
+===================================================================
+--- etc/rc.d/Makefile	(revision 264301)
++++ etc/rc.d/Makefile	(working copy)
+@@ -54,6 +54,7 @@
+ 	hostid \
+ 	hostid_save \
+ 	hostname \
++	hv_kvpd \
+ 	inetd \
+ 	initrandom \
+ 	ip6addrctl \
+Index: sys/conf/files.amd64
+===================================================================
+--- sys/conf/files.amd64	(revision 264301)
++++ sys/conf/files.amd64	(working copy)
+@@ -224,6 +224,7 @@
+ dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
+ dev/hyperv/stordisengage/hv_ata_pci_disengage.c		optional	hyperv
+ dev/hyperv/storvsc/hv_storvsc_drv_freebsd.c		optional	hyperv
++dev/hyperv/utilities/hv_kvp.c				optional	hyperv
+ dev/hyperv/utilities/hv_util.c				optional	hyperv
+ dev/hyperv/vmbus/hv_channel.c				optional	hyperv
+ dev/hyperv/vmbus/hv_channel_mgmt.c			optional	hyperv
+Index: sys/conf/files.i386
+===================================================================
+--- sys/conf/files.i386	(revision 264301)
++++ sys/conf/files.i386	(working copy)
+@@ -215,6 +215,7 @@
+ dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
+ dev/hyperv/stordisengage/hv_ata_pci_disengage.c		optional	hyperv
+ dev/hyperv/storvsc/hv_storvsc_drv_freebsd.c		optional	hyperv
++dev/hyperv/utilities/hv_kvp.c				optional	hyperv
+ dev/hyperv/utilities/hv_util.c				optional	hyperv
+ dev/hyperv/vmbus/hv_channel.c				optional	hyperv
+ dev/hyperv/vmbus/hv_channel_mgmt.c			optional	hyperv
+Index: sys/dev/hyperv/utilities/hv_kvp.h
+===================================================================
+--- sys/dev/hyperv/utilities/hv_kvp.h	(revision 264301)
++++ sys/dev/hyperv/utilities/hv_kvp.h	(working copy)
+@@ -1,7 +1,5 @@
+ /*-
+- * Copyright (c) 2009-2012 Microsoft Corp.
+- * Copyright (c) 2012 NetApp Inc.
+- * Copyright (c) 2012 Citrix Inc.
++ * Copyright (c) 2009-2014 Microsoft Corp.
+  * All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -30,7 +28,7 @@
+ #define _KVP_H
+ 
+ /*
+- * An implementation of HyperV key value pair (KVP) functionality for FreeBSD 
++ * An implementation of HyperV key value pair (KVP) functionality for FreeBSD
+  *
+  */
+ 
+@@ -53,7 +51,7 @@
+ /*
+  * bytes, including any null terminators
+  */
+-#define HV_KVP_EXCHANGE_MAX_VALUE_SIZE          (2048)
++#define HV_KVP_EXCHANGE_MAX_VALUE_SIZE    (2048)
+ 
+ 
+ /*
+@@ -61,7 +59,7 @@
+  * is 256 characters, including the null terminator
+  */
+ 
+-#define HV_KVP_EXCHANGE_MAX_KEY_SIZE            (512)
++#define HV_KVP_EXCHANGE_MAX_KEY_SIZE    (512)
+ 
+ /*
+  * In FreeBSD, we implement the KVP functionality in two components:
+@@ -116,26 +114,18 @@
+  * Registry value types.
+  */
+ 
+-#define HV_REG_SZ  1
+-#define HV_REG_U32 4
+-#define HV_REG_U64 8
++#define HV_REG_SZ     1
++#define HV_REG_U32    4
++#define HV_REG_U64    8
+ 
+ 
+ /*
+- * Daemon code not supporting IP injection (legacy daemon).
++ * Daemon code supporting IP injection.
+  */
+ 
+-#define HV_KVP_OP_REGISTER	4
++#define HV_KVP_OP_REGISTER    4
+ 
+-/*
+- * Daemon code supporting IP injection.
+- * The KVP opcode field is used to communicate the
+- * registration information; so define a namespace that
+- * will be distinct from the host defined KVP opcode.
+- */
+ 
+-#define KVP_OP_REGISTER1 100
+-
+ enum hv_kvp_exchg_op {
+ 	HV_KVP_OP_GET = 0,
+ 	HV_KVP_OP_SET,
+@@ -158,38 +148,38 @@
+ /*
+  * Some Hyper-V status codes.
+  */
+-#define HV_KVP_S_OK				0x00000000
+-#define HV_KVP_E_FAIL			0x80004005
+-#define HV_KVP_S_CONT			0x80070103
+-#define HV_ERROR_NOT_SUPPORTED		0x80070032
+-#define HV_ERROR_MACHINE_LOCKED		0x800704F7
+-#define HV_ERROR_DEVICE_NOT_CONNECTED	0x8007048F
+-#define HV_INVALIDARG			0x80070057
+-#define HV_KVP_GUID_NOTFOUND		0x80041002
++#define HV_KVP_S_OK                      0x00000000
++#define HV_KVP_E_FAIL                    0x80004005
++#define HV_KVP_S_CONT                    0x80070103
++#define HV_ERROR_NOT_SUPPORTED           0x80070032
++#define HV_ERROR_MACHINE_LOCKED          0x800704F7
++#define HV_ERROR_DEVICE_NOT_CONNECTED    0x8007048F
++#define HV_INVALIDARG                    0x80070057
++#define HV_KVP_GUID_NOTFOUND             0x80041002
+ 
+-#define ADDR_FAMILY_NONE	0x00
+-#define ADDR_FAMILY_IPV4	0x01
+-#define ADDR_FAMILY_IPV6	0x02
++#define ADDR_FAMILY_NONE                 0x00
++#define ADDR_FAMILY_IPV4                 0x01
++#define ADDR_FAMILY_IPV6                 0x02
+ 
+-#define MAX_ADAPTER_ID_SIZE	128
+-#define MAX_IP_ADDR_SIZE	1024
+-#define MAX_GATEWAY_SIZE	512
++#define MAX_ADAPTER_ID_SIZE              128
++#define MAX_IP_ADDR_SIZE                 1024
++#define MAX_GATEWAY_SIZE                 512
+ 
+ 
+ struct hv_kvp_ipaddr_value {
+-	uint16_t	adapter_id[MAX_ADAPTER_ID_SIZE];
+-	uint8_t	addr_family;
+-	uint8_t	dhcp_enabled;
+-	uint16_t	ip_addr[MAX_IP_ADDR_SIZE];
+-	uint16_t	sub_net[MAX_IP_ADDR_SIZE];
+-	uint16_t	gate_way[MAX_GATEWAY_SIZE];
+-	uint16_t	dns_addr[MAX_IP_ADDR_SIZE];
+-} __attribute__((packed));
++	uint16_t adapter_id[MAX_ADAPTER_ID_SIZE];
++	uint8_t  addr_family;
++	uint8_t  dhcp_enabled;
++	uint16_t ip_addr[MAX_IP_ADDR_SIZE];
++	uint16_t sub_net[MAX_IP_ADDR_SIZE];
++	uint16_t gate_way[MAX_GATEWAY_SIZE];
++	uint16_t dns_addr[MAX_IP_ADDR_SIZE];
++}__attribute__((packed));
+ 
+ 
+ struct hv_kvp_hdr {
+-	uint8_t operation;
+-	uint8_t pool;
++	uint8_t  operation;
++	uint8_t  pool;
+ 	uint16_t pad;
+ } __attribute__((packed));
+ 
+@@ -197,9 +187,9 @@
+ 	uint32_t value_type;
+ 	uint32_t key_size;
+ 	uint32_t value_size;
+-	uint8_t key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
++	uint8_t  key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
+ 	union {
+-		uint8_t value[HV_KVP_EXCHANGE_MAX_VALUE_SIZE];
++		uint8_t  value[HV_KVP_EXCHANGE_MAX_VALUE_SIZE];
+ 		uint32_t value_u32;
+ 		uint64_t value_u64;
+ 	} msg_value;
+@@ -233,10 +223,10 @@
+ 		int error;
+ 	} hdr;
+ 	union {
+-		struct hv_kvp_msg_get	kvp_get;
+-		struct hv_kvp_msg_set	kvp_set;
+-		struct hv_kvp_msg_delete	kvp_delete;
+-		struct hv_kvp_msg_enumerate	kvp_enum_data;
++		struct hv_kvp_msg_get       kvp_get;
++		struct hv_kvp_msg_set       kvp_set;
++		struct hv_kvp_msg_delete    kvp_delete;
++		struct hv_kvp_msg_enumerate kvp_enum_data;
+ 		struct hv_kvp_ipaddr_value  kvp_ip_val;
+ 		struct hv_kvp_register	kvp_register;
+ 	} body;
+@@ -248,38 +238,41 @@
+ 	struct hv_kvp_ipaddr_value      kvp_ip_val;
+ } __attribute__((packed));
+ 
+-#define BSD_SOC_PATH "/etc/hyperv/socket" 
++#define BSD_SOC_PATH                "/usr/local/hyperv/hyperv_socket"
+ 
+-#define HV_SHUT_DOWN		0
+-#define HV_TIME_SYNCH	 	1
+-#define HV_HEART_BEAT	 	2
+-#define HV_KVP		 	3
+-#define HV_MAX_UTIL_SERVICES 	4
++#define HV_SHUT_DOWN                0
++#define HV_TIME_SYNCH               1
++#define HV_HEART_BEAT               2
++#define HV_KVP                      3
++#define HV_MAX_UTIL_SERVICES        4
+ 
+-#define HV_WLTIMEDELTA			116444736000000000L /* in 100ns unit */
+-#define HV_ICTIMESYNCFLAG_PROBE		0
+-#define HV_ICTIMESYNCFLAG_SYNC		1
+-#define HV_ICTIMESYNCFLAG_SAMPLE	2
+-#define HV_NANO_SEC_PER_SEC 		1000000000
++#define HV_WLTIMEDELTA              116444736000000000L     /* in 100ns unit */
++#define HV_ICTIMESYNCFLAG_PROBE     0
++#define HV_ICTIMESYNCFLAG_SYNC      1
++#define HV_ICTIMESYNCFLAG_SAMPLE    2
++#define HV_NANO_SEC_PER_SEC         1000000000
+ 
+ typedef struct hv_vmbus_service {
+-	hv_guid		guid;		/* Hyper-V GUID */
+-       char*			name;		/* name of service */
+-       boolean_t		enabled;	/* service enabled */
+-       hv_work_queue*	work_queue;	/* background work queue */
+-	
+-	//
+-	// function to initialize service
+-	//
+-       int (*init)(struct hv_vmbus_service *);
+-	
+-	//
+-	// function to process Hyper-V messages 
+-	//
+-       void (*callback)(void *);
++	hv_guid       guid;             /* Hyper-V GUID */
++	char          *name;            /* name of service */
++	boolean_t     enabled;          /* service enabled */
++	hv_work_queue *work_queue;      /* background work queue */
++
++	/*
++	 * function to initialize service
++	 */
++	int (*init)(struct hv_vmbus_service *);
++
++	/*
++	 * function to process Hyper-V messages
++	 */
++	void (*callback)(void *);
+ } hv_vmbus_service;
+ 
+ extern uint8_t* receive_buffer[];
+ extern hv_vmbus_service service_table[];
+ 
++void hv_kvp_callback(void *context);
++int hv_kvp_init(hv_vmbus_service *serv);
++void hv_kvp_deinit(void);
+ #endif /* _KVP_H */
+Index: sys/dev/hyperv/utilities/hv_util.c
+===================================================================
+--- sys/dev/hyperv/utilities/hv_util.c	(revision 264301)
++++ sys/dev/hyperv/utilities/hv_util.c	(working copy)
+@@ -80,8 +80,17 @@
+ 			0xab, 0x55, 0x38, 0x2f, 0x3b, 0xd5, 0x42, 0x2d},
+ 	  .name = "Hyper-V Heartbeat Service\n",
+ 	  .enabled = TRUE,
+-          .callback = hv_heartbeat_cb,
++  	  .callback = hv_heartbeat_cb,
+ 	},
++
++        /* KVP (Key Value Pair) Service */
++        { .guid.data = {0xe7, 0xf4, 0xa0, 0xa9, 0x45, 0x5a, 0x96, 0x4d,
++			0xb8, 0x27, 0x8a, 0x84, 0x1e, 0x8c, 0x3,  0xe6},
++	  .name = "Hyper-V KVP Service\n",
++	  .enabled = TRUE,
++	  .init = hv_kvp_init,
++	  .callback = hv_kvp_callback,
++	},
+ };
+ 
+ /*
+@@ -143,7 +152,7 @@
+ static void
+ hv_set_host_time(void *context)
+ {
+- 	time_sync_data *time_msg = context;	
++ 	time_sync_data* time_msg = (time_sync_data*) context;	
+ 	uint64_t hosttime = time_msg->data;
+ 	struct timespec guest_ts, host_ts;
+ 	uint64_t host_tns;
+@@ -253,12 +262,12 @@
+ static void
+ hv_shutdown_cb(void *context)
+ {
+-	uint8_t*			buf;
++	uint8_t*		buf;
+ 	hv_vmbus_channel*		channel = context;
+-	uint8_t				execute_shutdown = 0;
++	uint8_t			execute_shutdown = 0;
+ 	hv_vmbus_icmsg_hdr*		icmsghdrp;
+-	uint32_t			recv_len;
+-	uint64_t			request_id;
++	uint32_t		recv_len;
++	uint64_t		request_id;
+ 	int				ret;
+ 	hv_vmbus_shutdown_msg_data*	shutdown_msg;
+ 
+@@ -432,7 +441,6 @@
+ 
+ 	free(receive_buffer[receive_buffer_offset], M_DEVBUF);
+ 	receive_buffer[receive_buffer_offset] = NULL;
+-
+ 	return (0);
+ }
+ 
+@@ -446,7 +454,8 @@
+         case MOD_LOAD:
+                 break;
+         case MOD_UNLOAD:
+-                break;
++		hv_kvp_deinit();
++		break;
+ 	default:
+ 		break;
+         }
+Index: sys/modules/hyperv/utilities/Makefile
+===================================================================
+--- sys/modules/hyperv/utilities/Makefile	(revision 264301)
++++ sys/modules/hyperv/utilities/Makefile	(working copy)
+@@ -3,7 +3,7 @@
+ .PATH:	${.CURDIR}/../../../dev/hyperv/utilities
+ 
+ KMOD=	hv_utils
+-SRCS=	hv_util.c
++SRCS=	hv_util.c hv_kvp.c
+ SRCS+=	bus_if.h device_if.h
+ 
+ CFLAGS+= -I${.CURDIR}/../../../dev/hyperv/include \
+Index: usr.sbin/Makefile
+===================================================================
+--- usr.sbin/Makefile	(revision 264302)
++++ usr.sbin/Makefile	(working copy)
+@@ -33,6 +33,7 @@
+ 	getfmac \
+ 	getpmac \
+ 	gstat \
++	hv_kvp_daemon \
+ 	i2c \
+ 	ifmcstat \
+ 	inetd \
