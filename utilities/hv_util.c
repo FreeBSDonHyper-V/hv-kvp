@@ -441,7 +441,6 @@ hv_util_detach(device_t dev)
 
 	free(receive_buffer[receive_buffer_offset], M_DEVBUF);
 	receive_buffer[receive_buffer_offset] = NULL;
-
 	return (0);
 }
 
@@ -455,7 +454,7 @@ static int hv_util_modevent(module_t mod, int event, void *arg)
         case MOD_LOAD:
                 break;
         case MOD_UNLOAD:
-                hv_kvp_deinit();
+		hv_kvp_deinit();
 		break;
 	default:
 		break;

@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2009-2012 Microsoft Corp.
+ * Copyright (c) 2009-2014 Microsoft Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -146,6 +146,9 @@ static struct hv_kvp_msg hv_user_kvp_msg;
 
 /* Indicates daemon registered with driver */
 static boolean_t register_done = FALSE;
+
+/* Character device status */ 
+static boolean_t dev_accessed = FALSE;	 
 
 /*
  * hv_kvp low level functions
@@ -849,6 +852,7 @@ hv_kvp_dev_destroy(void)
 
 	destroy_dev(hv_kvp_dev);
 	free(hv_kvp_dev_buf, M_HV_KVP_DEV_BUF);
+	return;
 }
 
 
@@ -858,6 +862,10 @@ hv_kvp_dev_open(struct cdev *dev __unused, int oflags __unused, int devtype __un
 {
 
 	uprintf("Opened device \"hv_kvp_device\" successfully.\n");
+	if (dev_accessed)
+		return (-EBUSY);
+	
+	dev_accessed = TRUE;
 	return (0);
 }
 
@@ -868,6 +876,8 @@ hv_kvp_dev_close(struct cdev *dev __unused, int fflag __unused, int devtype __un
 {
 
 	uprintf("Closing device \"hv_kvp_device\".\n");
+	dev_accessed = FALSE;
+	register_done = FALSE;
 	return (0);
 }
 
@@ -970,4 +980,5 @@ hv_kvp_deinit(void)
 {
 
 	hv_kvp_dev_destroy();
+	return;
 }

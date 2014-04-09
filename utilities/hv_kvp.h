@@ -1,7 +1,5 @@
 /*-
- * Copyright (c) 2009-2012 Microsoft Corp.
- * Copyright (c) 2012 NetApp Inc.
- * Copyright (c) 2012 Citrix Inc.
+ * Copyright (c) 2009-2014 Microsoft Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -122,19 +120,11 @@
 
 
 /*
- * Daemon code not supporting IP injection (legacy daemon).
+ * Daemon code supporting IP injection.
  */
 
 #define HV_KVP_OP_REGISTER    4
 
-/*
- * Daemon code supporting IP injection.
- * The KVP opcode field is used to communicate the
- * registration information; so define a namespace that
- * will be distinct from the host defined KVP opcode.
- */
-
-#define HV_KVP_OP_REGISTER1    100
 
 enum hv_kvp_exchg_op {
 	HV_KVP_OP_GET = 0,
