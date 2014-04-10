@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# make install
+# adds hyperv labels in loader.conf 
+#
+
+if [ "$1" = "PRE-INSTALL" ]; then
+echo "===> Pre-install Check"
+# KVP - Directories Check
+
+echo "===> Checking KVP directories" 
+kvp_dir="/usr/local/hyperv/"
+kvp_dir_scripts="/usr/local/hyperv/scripts"
+
+if [ -d $kvp_dir ]; then
+   if [ -d $kvp_dir_scripts ]; then
+      echo " ### KVP Directories present " 
+   else 
+      echo " ### Creating $kvp_dir_scripts directory "
+      mkdir /usr/local/hyperv/scripts
+   fi
+else 
+   echo " xxx KVP directories not found"
+   echo " ### Creating KVP  directories "
+   mkdir /usr/local/hyperv
+   mkdir /usr/local/hyperv/scripts
+fi
+
+else if [ "$1" = "POST-INSTALL" ]; then
+   test="/boot/loader.conf"
+
+# KVP - daemon label
+echo "===> Adding kvp daemon label" 
+sed -i".bak" '/Label for KVP daemon/d' /etc/rc.conf
+sed -i".bak" '/hv_kvp_daemon_enable/d' /etc/rc.conf
+echo  "# Label for KVP daemon -do not modify" >> /etc/rc.conf
+echo  "hv_kvp_daemon_enable=\"YES\"" >> /etc/rc.conf
+
+fi
+fi
+exit 0
