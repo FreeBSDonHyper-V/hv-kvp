@@ -1,7 +1,5 @@
 /*-
- * Copyright (c) 2009-2012 Microsoft Corp.
- * Copyright (c) 2012 NetApp Inc.
- * Copyright (c) 2012 Citrix Inc.
+ * Copyright (c) 2014 Microsoft Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,7 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
+/*
  * A common driver for all hyper-V util services.
  */
 
@@ -53,7 +51,7 @@ static void hv_timesync_cb(void *context);
 
 static int hv_timesync_init(hv_vmbus_service *serv);
 
-/**
+/*
  * Note: GUID codes below are predefined by the host hypervisor
  * (Hyper-V and Azure)interface and required for correct operation.
  */
@@ -444,11 +442,13 @@ hv_util_detach(device_t dev)
 	return (0);
 }
 
-static void hv_util_init(void)
+static void
+hv_util_init(void)
 {
 }
 
-static int hv_util_modevent(module_t mod, int event, void *arg)
+static int
+hv_util_modevent(module_t mod, int event, void *arg)
 {
 	switch (event) {
         case MOD_LOAD:
