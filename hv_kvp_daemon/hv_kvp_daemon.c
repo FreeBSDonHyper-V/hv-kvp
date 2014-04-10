@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2009-2014 Microsoft Corp. 
+/*-
+ * Copyright (c) 2014 Microsoft Corp.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -29,13 +29,14 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 /*
  *      Author: Sainath Varanasi.
  *      Date:   4/2012
  */
 
 
-/* header */ 
+/* header */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
@@ -63,14 +64,14 @@
 
 #include "hv_kvp.h"
 
-typedef uint8_t         __u8;
-typedef uint16_t        __u16;
-typedef uint32_t        __u32;
-typedef uint64_t        __u64;
+typedef uint8_t		__u8;
+typedef uint16_t	__u16;
+typedef uint32_t	__u32;
+typedef uint64_t	__u64;
 
-/* 
- * ENUM Data 
- * 
+/*
+ * ENUM Data
+ *
  */
 
 /* Global Variables */
@@ -98,33 +99,32 @@ enum {
 
 /* Global buffers for KVP communication */
 
-static char           *os_name     = "";
-static char           *os_major    = "";
-static char           *os_minor    = "";
-static char           *processor_arch;
-static char           *os_build;
-static char           *lic_version = "BSD Pre-Release version";
+static char *os_name = "";
+static char *os_major = "";
+static char *os_minor = "";
+static char *processor_arch;
+static char *os_build;
+static char *lic_version = "BSD Pre-Release version";
 static struct utsname uts_buf;
 
 /*
  * The location of the interface configuration file.
  */
 
-#define KVP_CONFIG_LOC       "/usr/local/hyperv/pool/"
-#define MAX_FILE_NAME        100
-#define ENTRIES_PER_BLOCK    50
+#define MAX_FILE_NAME		100
+#define ENTRIES_PER_BLOCK	50
 
 struct kvp_record {
-	char key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-	char value[HV_KVP_EXCHANGE_MAX_VALUE_SIZE];
+	char	key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
+	char	value[HV_KVP_EXCHANGE_MAX_VALUE_SIZE];
 };
 
 struct kvp_file_state {
-	int               fd;
-	int               num_blocks;
-	struct kvp_record *records;
-	int               num_records;
-	char              fname[MAX_FILE_NAME];
+	int			fd;
+	int			num_blocks;
+	struct kvp_record *	records;
+	int			num_records;
+	char			fname[MAX_FILE_NAME];
 };
 
 static struct kvp_file_state kvp_file_info[HV_KVP_POOL_COUNT];
@@ -158,7 +158,7 @@ static void kvp_release_lock(int pool)
 
 static void kvp_update_file(int pool)
 {
-	FILE   *filep;
+	FILE *filep;
 	size_t bytes_written;
 
 	/*
@@ -190,12 +190,12 @@ static void kvp_update_file(int pool)
 
 static void kvp_update_mem_state(int pool)
 {
-	FILE              *filep;
-	size_t            records_read = 0;
-	struct kvp_record *record      = kvp_file_info[pool].records;
+	FILE *filep;
+	size_t records_read = 0;
+	struct kvp_record *record = kvp_file_info[pool].records;
 	struct kvp_record *readp;
-	int               num_blocks = kvp_file_info[pool].num_blocks;
-	int               alloc_unit = sizeof(struct kvp_record) * ENTRIES_PER_BLOCK;
+	int num_blocks = kvp_file_info[pool].num_blocks;
+	int alloc_unit = sizeof(struct kvp_record) * ENTRIES_PER_BLOCK;
 
 	kvp_acquire_lock(pool);
 
@@ -207,7 +207,7 @@ static void kvp_update_mem_state(int pool)
 	}
 	for ( ; ; )
 	{
-		readp         = &record[records_read];
+		readp = &record[records_read];
 		records_read += fread(readp, sizeof(struct kvp_record),
 			ENTRIES_PER_BLOCK * num_blocks,
 			filep);
@@ -233,8 +233,8 @@ static void kvp_update_mem_state(int pool)
 		break;
 	}
 
-	kvp_file_info[pool].num_blocks  = num_blocks;
-	kvp_file_info[pool].records     = record;
+	kvp_file_info[pool].num_blocks = num_blocks;
+	kvp_file_info[pool].records = record;
 	kvp_file_info[pool].num_records = records_read;
 
 	fclose(filep);
@@ -244,15 +244,15 @@ static void kvp_update_mem_state(int pool)
 
 static int kvp_file_init(void)
 {
-	int               fd;
-	FILE              *filep;
-	size_t            records_read;
-	char              *fname;
+	int fd;
+	FILE *filep;
+	size_t records_read;
+	char *fname;
 	struct kvp_record *record;
 	struct kvp_record *readp;
-	int               num_blocks;
-	int               i;
-	int               alloc_unit = sizeof(struct kvp_record) * ENTRIES_PER_BLOCK;
+	int num_blocks;
+	int i;
+	int alloc_unit = sizeof(struct kvp_record) * ENTRIES_PER_BLOCK;
 
 	if (access("/usr/local/hyperv/pool", F_OK)) {
 		if (mkdir("/usr/local/hyperv/pool", S_IRUSR | S_IWUSR | S_IROTH)) {
@@ -263,9 +263,9 @@ static int kvp_file_init(void)
 
 	for (i = 0; i < HV_KVP_POOL_COUNT; i++)
 	{
-		fname        = kvp_file_info[i].fname;
+		fname = kvp_file_info[i].fname;
 		records_read = 0;
-		num_blocks   = 1;
+		num_blocks = 1;
 		sprintf(fname, "/usr/local/hyperv/pool/.kvp_pool_%d", i);
 		fd = open(fname, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IROTH);
 
@@ -286,7 +286,7 @@ static int kvp_file_init(void)
 		}
 		for ( ; ; )
 		{
-			readp         = &record[records_read];
+			readp = &record[records_read];
 			records_read += fread(readp, sizeof(struct kvp_record),
 				ENTRIES_PER_BLOCK,
 				filep);
@@ -312,9 +312,9 @@ static int kvp_file_init(void)
 			}
 			break;
 		}
-		kvp_file_info[i].fd          = fd;
-		kvp_file_info[i].num_blocks  = num_blocks;
-		kvp_file_info[i].records     = record;
+		kvp_file_info[i].fd = fd;
+		kvp_file_info[i].num_blocks = num_blocks;
+		kvp_file_info[i].records = record;
 		kvp_file_info[i].num_records = records_read;
 		fclose(filep);
 	}
@@ -325,9 +325,9 @@ static int kvp_file_init(void)
 
 static int kvp_key_delete(int pool, __u8 *key, int key_size)
 {
-	int               i;
-	int               j, k;
-	int               num_records;
+	int i;
+	int j, k;
+	int num_records;
 	struct kvp_record *record;
 
 	/*
@@ -336,7 +336,7 @@ static int kvp_key_delete(int pool, __u8 *key, int key_size)
 	kvp_update_mem_state(pool);
 
 	num_records = kvp_file_info[pool].num_records;
-	record      = kvp_file_info[pool].records;
+	record = kvp_file_info[pool].records;
 
 	for (i = 0; i < num_records; i++)
 	{
@@ -374,10 +374,10 @@ static int
 kvp_key_add_or_modify(int pool, __u8 *key, __u32 key_size, __u8 *value,
     __u32 value_size)
 {
-	int               i;
-	int               num_records;
+	int i;
+	int num_records;
 	struct kvp_record *record;
-	int               num_blocks;
+	int num_blocks;
 
 	if ((key_size > HV_KVP_EXCHANGE_MAX_KEY_SIZE) ||
 	    (value_size > HV_KVP_EXCHANGE_MAX_VALUE_SIZE)) {
@@ -391,8 +391,8 @@ kvp_key_add_or_modify(int pool, __u8 *key, __u32 key_size, __u8 *value,
 	kvp_update_mem_state(pool);
 
 	num_records = kvp_file_info[pool].num_records;
-	record      = kvp_file_info[pool].records;
-	num_blocks  = kvp_file_info[pool].num_blocks;
+	record = kvp_file_info[pool].records;
+	num_blocks = kvp_file_info[pool].num_blocks;
 
 	for (i = 0; i < num_records; i++)
 	{
@@ -434,8 +434,8 @@ kvp_key_add_or_modify(int pool, __u8 *key, __u32 key_size, __u8 *value,
 static int kvp_get_value(int pool, __u8 *key, int key_size, __u8 *value,
     int value_size)
 {
-	int               i;
-	int               num_records;
+	int i;
+	int num_records;
 	struct kvp_record *record;
 
 	if ((key_size > HV_KVP_EXCHANGE_MAX_KEY_SIZE) ||
@@ -449,7 +449,7 @@ static int kvp_get_value(int pool, __u8 *key, int key_size, __u8 *value,
 	kvp_update_mem_state(pool);
 
 	num_records = kvp_file_info[pool].num_records;
-	record      = kvp_file_info[pool].records;
+	record = kvp_file_info[pool].records;
 
 	for (i = 0; i < num_records; i++)
 	{
@@ -495,8 +495,8 @@ void kvp_get_os_info(void)
 	char *p, buf[512];
 
 	uname(&uts_buf);
-	os_build       = uts_buf.release;
-	os_name        = uts_buf.sysname;
+	os_build = uts_buf.release;
+	os_name = uts_buf.sysname;
 	processor_arch = uts_buf.machine;
 
 	/*
@@ -533,7 +533,7 @@ void kvp_get_os_info(void)
 
 			/* Remove quotes and newline; un-escape */
 			value = p;
-			q     = p;
+			q = p;
 			while (*p)
 			{
 				if (*p == '\\') {
@@ -644,7 +644,7 @@ static char *get_mac_address(const char *sdlstring)
 {
 	char octet[4];
 	char buf[256] = "\0";
-	int  i;
+	int i;
 	char *mac = NULL;
 
 	for (i = 0; i < 6; i++)
@@ -666,11 +666,11 @@ static char *get_mac_address(const char *sdlstring)
  */
 static char *kvp_if_name_to_mac(char *if_name)
 {
-	char               *mac_addr = NULL;
-	struct ifaddrs     *ifaddrs_ptr;
-	struct ifaddrs     *head_ifaddrs_ptr;
+	char *mac_addr = NULL;
+	struct ifaddrs *ifaddrs_ptr;
+	struct ifaddrs *head_ifaddrs_ptr;
 	struct sockaddr_dl *sdl;
-	int                status;
+	int status;
 
 	status = getifaddrs(&ifaddrs_ptr);
 
@@ -697,12 +697,12 @@ static char *kvp_if_name_to_mac(char *if_name)
  */
 static char *kvp_mac_to_if_name(char *mac)
 {
-	char               *if_name = NULL;
-	struct ifaddrs     *ifaddrs_ptr;
-	struct ifaddrs     *head_ifaddrs_ptr;
+	char *if_name = NULL;
+	struct ifaddrs *ifaddrs_ptr;
+	struct ifaddrs *head_ifaddrs_ptr;
 	struct sockaddr_dl *sdl;
-	int                status, i;
-	char               *buf_ptr;
+	int status, i;
+	char *buf_ptr;
 
 	status = getifaddrs(&ifaddrs_ptr);
 
@@ -723,7 +723,7 @@ static char *kvp_mac_to_if_name(char *mac)
 					if_name = strdup(ifaddrs_ptr->ifa_name);
 					free(buf_ptr);
 					break;
-				}else if (buf_ptr != NULL)   {
+				}else if (buf_ptr != NULL) {
 					free(buf_ptr);
 				}
 			}
@@ -760,7 +760,7 @@ static void kvp_process_ipconfig_file(char *cmd,
 			break;
 		}
 
-		x  = strchr(p, '\n');
+		x = strchr(p, '\n');
 		*x = '\0';
 		strcat(config_buf, p);
 		strcat(config_buf, ";");
@@ -770,7 +770,7 @@ static void kvp_process_ipconfig_file(char *cmd,
 
 
 static void kvp_get_ipconfig_info(char *if_name,
-    struct hv_kvp_ipaddr_value         *buffer)
+    struct hv_kvp_ipaddr_value *buffer)
 {
 	char cmd[512];
 	char dhcp_info[128];
@@ -873,19 +873,19 @@ static int kvp_process_ip_address(void *addrp,
     int family, char *buffer,
     int length, int *offset)
 {
-	struct sockaddr_in  *addr;
+	struct sockaddr_in *addr;
 	struct sockaddr_in6 *addr6;
-	int                 addr_length;
-	char                tmp[50];
-	const char          *str;
+	int addr_length;
+	char tmp[50];
+	const char *str;
 
 	if (family == AF_INET) {
-		addr        = (struct sockaddr_in *)addrp;
-		str         = inet_ntop(family, &addr->sin_addr, tmp, 50);
+		addr = (struct sockaddr_in *)addrp;
+		str = inet_ntop(family, &addr->sin_addr, tmp, 50);
 		addr_length = INET_ADDRSTRLEN;
 	} else {
-		addr6       = (struct sockaddr_in6 *)addrp;
-		str         = inet_ntop(family, &addr6->sin6_addr.s6_addr, tmp, 50);
+		addr6 = (struct sockaddr_in6 *)addrp;
+		str = inet_ntop(family, &addr6->sin6_addr.s6_addr, tmp, 50);
 		addr_length = INET6_ADDRSTRLEN;
 	}
 
@@ -912,25 +912,25 @@ static int
 kvp_get_ip_info(int family, char *if_name, int op,
     void *out_buffer, int length)
 {
-	struct ifaddrs             *ifap;
-	struct ifaddrs             *curp;
-	int                        offset    = 0;
-	int                        sn_offset = 0;
-	int                        error     = 0;
-	char                       *buffer;
+	struct ifaddrs *ifap;
+	struct ifaddrs *curp;
+	int offset = 0;
+	int sn_offset = 0;
+	int error = 0;
+	char *buffer;
 	struct hv_kvp_ipaddr_value *ip_buffer;
-	char                       cidr_mask[5]; /* /xyz */
-	int                        weight;
-	int                        i;
-	unsigned int		   *w = NULL;
-	char                       *sn_str;
-	struct sockaddr_in6        *addr6;
+	char cidr_mask[5];                       /* /xyz */
+	int weight;
+	int i;
+	unsigned int *w = NULL;
+	char *sn_str;
+	struct sockaddr_in6 *addr6;
 
 	if (op == HV_KVP_OP_ENUMERATE) {
 		buffer = out_buffer;
 	} else {
 		ip_buffer = out_buffer;
-		buffer    = (char *)ip_buffer->ip_addr;
+		buffer = (char *)ip_buffer->ip_addr;
 		ip_buffer->addr_family = 0;
 	}
 
@@ -1007,7 +1007,7 @@ kvp_get_ip_info(int family, char *if_name, int op,
 				 */
 				weight = 0;
 				sn_str = (char *)ip_buffer->sub_net;
-				addr6  = (struct sockaddr_in6 *)
+				addr6 = (struct sockaddr_in6 *)
 				    curp->ifa_netmask;
 				w = (unsigned int *)addr6->sin6_addr.s6_addr;
 
@@ -1055,6 +1055,7 @@ getaddr_done:
 	return (error);
 }
 
+
 static int kvp_write_file(FILE *f, char *s1, char *s2, char *s3)
 {
 	int ret;
@@ -1068,9 +1069,10 @@ static int kvp_write_file(FILE *f, char *s1, char *s2, char *s3)
 	return (0);
 }
 
+
 static int kvp_set_ip_info(char *if_name, struct hv_kvp_ipaddr_value *new_val)
 {
-	int  error = 0;
+	int error = 0;
 	char if_file[128];
 	FILE *file;
 	char cmd[512];
@@ -1175,13 +1177,13 @@ static int
 kvp_get_domain_name(char *buffer, int length)
 {
 	struct addrinfo hints, *info;
-	int             error = 0;
+	int error = 0;
 
 	gethostname(buffer, length);
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family   = AF_INET;  /* Get only ipv4 addrinfo. */
+	hints.ai_family = AF_INET;    /* Get only ipv4 addrinfo. */
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags    = AI_CANONNAME;
+	hints.ai_flags = AI_CANONNAME;
 
 	error = getaddrinfo(buffer, NULL, &hints, &info);
 	if (error != 0) {
@@ -1199,21 +1201,21 @@ int main(void)
 	char *key_value, *key_name, *if_name;
 	int op, pool;
 	int hv_kvp_dev_fd, error, len;
-	struct hv_kvp_msg *hv_kvp_dev_buf; /* communication buffer */
+	struct hv_kvp_msg *hv_kvp_dev_buf;      /* communication buffer */
 	struct hv_kvp_ipaddr_value *kvp_ip_val; /* IP address buf */
-	struct hv_kvp_msg *hv_msg; /* operation buffer */
-	
+	struct hv_kvp_msg *hv_msg;              /* operation buffer */
+
 	/* Allocate memmory of hv_kvp_dev_buf */
 	hv_kvp_dev_buf = malloc(sizeof(*hv_kvp_dev_buf));
 	hv_msg = malloc(sizeof(*hv_msg));
-	
+
 	/* Memory allocation failed*/
-	
+
 	daemon(1, 0);
 	openlog("HV_KVP", 0, LOG_USER);
 	syslog(LOG_INFO, "HV_KVP starting; pid is:%d", getpid());
-	
-	
+
+
 	/* Basics of KVP */
 	kvp_get_os_info();
 
@@ -1223,42 +1225,41 @@ int main(void)
 	}
 
 	/* Open the Character Device */
-	hv_kvp_dev_fd = open("/dev/hv_kvp_dev" , O_RDWR);
-	
+	hv_kvp_dev_fd = open("/dev/hv_kvp_dev", O_RDWR);
+
 	if (hv_kvp_dev_fd < 0) {
-        syslog(LOG_ERR, "open /dev/hv_kvp_dev failed; error: %d %s", errno, strerror(errno));
-	    close(hv_kvp_dev_fd);
-        exit(EXIT_FAILURE);
-    }
-	 
+		syslog(LOG_ERR, "open /dev/hv_kvp_dev failed; error: %d %s", errno, strerror(errno));
+		close(hv_kvp_dev_fd);
+		exit(EXIT_FAILURE);
+	}
+
 	/* First Register the Daemon */
 	hv_kvp_dev_buf->hdr.kvp_hdr.operation = HV_KVP_OP_REGISTER;
 	len = write(hv_kvp_dev_fd, hv_kvp_dev_buf, sizeof(*hv_kvp_dev_buf));
-	
+
 	while (1)
 	{
-
 		/* Read from character device */
-		len = pread(hv_kvp_dev_fd, hv_kvp_dev_buf, sizeof(*hv_kvp_dev_buf), 0);	
-		
+		len = pread(hv_kvp_dev_fd, hv_kvp_dev_buf, sizeof(*hv_kvp_dev_buf), 0);
+
 		if (len != sizeof(struct hv_kvp_msg)) {
 			syslog(LOG_ERR, "read len is: %d", len);
 			continue;
 		}
-		
+
 		/* Copy hv_kvp_dev_buf to hv_msg */
 		memcpy(hv_msg, hv_kvp_dev_buf, sizeof(*hv_msg));
-		
+
 		/*
 		 * We will use the KVP header information to pass back
 		 * the error from this daemon. So, first copy the state
 		 * and set the error code to success.
 		 */
-		
-		op   = hv_msg->hdr.kvp_hdr.operation;
+
+		op = hv_msg->hdr.kvp_hdr.operation;
 		pool = hv_msg->hdr.kvp_hdr.pool;
 		hv_msg->hdr.error = HV_KVP_S_OK;
-	
+
 		switch (op)
 		{
 		case HV_KVP_OP_GET_IP_INFO:
@@ -1267,7 +1268,7 @@ int main(void)
 
 			if_name =
 			    kvp_mac_to_if_name((char *)kvp_ip_val->adapter_id);
-	
+
 			if (if_name == NULL) {
 				/*
 				 * We could not map the mac address to an
@@ -1290,7 +1291,7 @@ int main(void)
 		case HV_KVP_OP_SET_IP_INFO:
 
 			kvp_ip_val = &hv_msg->body.kvp_ip_val;
-			if_name    = (char *)kvp_ip_val->adapter_id;
+			if_name = (char *)kvp_ip_val->adapter_id;
 			if (if_name == NULL) {
 				/*
 				 * We could not map the guid to an
@@ -1361,7 +1362,7 @@ int main(void)
 			goto hv_kvp_done;
 		}
 
-		key_name  = (char *)hv_msg->body.kvp_enum_data.data.key;
+		key_name = (char *)hv_msg->body.kvp_enum_data.data.key;
 		key_value = (char *)hv_msg->body.kvp_enum_data.data.msg_value.value;
 
 		switch (hv_msg->body.kvp_enum_data.index)
@@ -1426,18 +1427,17 @@ int main(void)
 
 		/*
 		 * Send the value back to the kernel. The response is
-		 * already in the receive buffer. 
+		 * already in the receive buffer.
 		 */
-		 
-		 /* copy the hv_msg to hv_kvp_dev_buf to send the data */
-		 
-hv_kvp_done:		
+
+		/* copy the hv_msg to hv_kvp_dev_buf to send the data */
+
+hv_kvp_done:
 		len = pwrite(hv_kvp_dev_fd, hv_msg, sizeof(*hv_kvp_dev_buf), 0);
 
 		if (len != sizeof(struct hv_kvp_msg)) {
 			syslog(LOG_ERR, "write len is: %d", len);
 			goto hv_kvp_done;
 		}
-	}	
+	}
 }
-

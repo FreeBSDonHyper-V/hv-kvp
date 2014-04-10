@@ -1,27 +1,38 @@
 /*-
- * Copyright (c) 2009-2014 Microsoft Corp.
- * All rights reserved.
+ * Copyright (c) 2014 Microsoft Corp. 
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice unmodified, this list of conditions, and the following
- *    disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
+ * This software is available to you under a choice of one of two
+ * licenses.  You may choose to be licensed under the terms of the GNU
+ * General Public License (GPL) Version 2, available from the file
+ * COPYING in the main directory of this source tree, or the
+ * OpenIB.org BSD license below:
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *     Redistribution and use in source and binary forms, with or
+ *     without modification, are permitted provided that the following
+ *     conditions are met:
+ *
+ *      - Redistributions of source code must retain the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer.
+ *
+ *      - Redistributions in binary form must reproduce the above
+ *        copyright notice, this list of conditions and the following
+ *        disclaimer in the documentation and/or other materials
+ *        provided with the distribution.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
+ *      Author: Sainath Varanasi.
+ *      Date:   4/2012
  */
 
 #ifndef _KVP_H
@@ -58,8 +69,8 @@
  * Maximum key size - the registry limit for the length of an entry name
  * is 256 characters, including the null terminator
  */
-
 #define HV_KVP_EXCHANGE_MAX_KEY_SIZE    (512)
+
 
 /*
  * In FreeBSD, we implement the KVP functionality in two components:
@@ -113,7 +124,6 @@
 /*
  * Registry value types.
  */
-
 #define HV_REG_SZ     1
 #define HV_REG_U32    4
 #define HV_REG_U64    8
@@ -122,7 +132,6 @@
 /*
  * Daemon code supporting IP injection.
  */
-
 #define HV_KVP_OP_REGISTER    4
 
 
@@ -136,6 +145,7 @@ enum hv_kvp_exchg_op {
 	HV_KVP_OP_COUNT /* Number of operations, must be last. */
 };
 
+
 enum hv_kvp_exchg_pool {
 	HV_KVP_POOL_EXTERNAL = 0,
 	HV_KVP_POOL_GUEST,
@@ -144,6 +154,7 @@ enum hv_kvp_exchg_pool {
 	HV_KVP_POOL_AUTO_INTERNAL,
 	HV_KVP_POOL_COUNT /* Number of pools, must be last. */
 };
+
 
 /*
  * Some Hyper-V status codes.
@@ -174,16 +185,15 @@ struct hv_kvp_ipaddr_value {
 	uint16_t sub_net[MAX_IP_ADDR_SIZE];
 	uint16_t gate_way[MAX_GATEWAY_SIZE];
 	uint16_t dns_addr[MAX_IP_ADDR_SIZE];
-}
-__attribute__((packed));
+}__attribute__((packed));
 
 
 struct hv_kvp_hdr {
 	uint8_t  operation;
 	uint8_t  pool;
 	uint16_t pad;
-}
-__attribute__((packed));
+} __attribute__((packed));
+
 
 struct hv_kvp_exchg_msg_value {
 	uint32_t value_type;
@@ -194,64 +204,59 @@ struct hv_kvp_exchg_msg_value {
 		uint8_t  value[HV_KVP_EXCHANGE_MAX_VALUE_SIZE];
 		uint32_t value_u32;
 		uint64_t value_u64;
-	}
-		 msg_value;
-}
-__attribute__((packed));
+	} msg_value;
+} __attribute__((packed));
+
 
 struct hv_kvp_msg_enumerate {
-	uint32_t                      index;
+	uint32_t index;
 	struct hv_kvp_exchg_msg_value data;
-}
-__attribute__((packed));
+} __attribute__((packed));
+
 
 struct hv_kvp_msg_get {
 	struct hv_kvp_exchg_msg_value data;
-}
-__attribute__((packed));
+} __attribute__((packed));
+
 
 struct hv_kvp_msg_set {
 	struct hv_kvp_exchg_msg_value data;
-}
-__attribute__((packed));
+} __attribute__((packed));
+
 
 struct hv_kvp_msg_delete {
 	uint32_t key_size;
-	uint8_t  key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-}
-__attribute__((packed));
+	uint8_t key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
+} __attribute__((packed));
+
 
 struct hv_kvp_register {
 	uint8_t version[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-}
-__attribute__((packed));
+} __attribute__((packed));
+
 
 struct hv_kvp_msg {
 	union {
 		struct hv_kvp_hdr kvp_hdr;
-		int               error;
-	}
-	hdr;
+		int error;
+	} hdr;
 	union {
-		struct hv_kvp_msg_get       kvp_get;
-		struct hv_kvp_msg_set       kvp_set;
-		struct hv_kvp_msg_delete    kvp_delete;
-		struct hv_kvp_msg_enumerate kvp_enum_data;
-		struct hv_kvp_ipaddr_value  kvp_ip_val;
-		struct hv_kvp_register      kvp_register;
-	}
-	body;
-}
-__attribute__((packed));
+		struct hv_kvp_msg_get		kvp_get;
+		struct hv_kvp_msg_set		kvp_set;
+		struct hv_kvp_msg_delete	kvp_delete;
+		struct hv_kvp_msg_enumerate	kvp_enum_data;
+		struct hv_kvp_ipaddr_value	kvp_ip_val;
+		struct hv_kvp_register		kvp_register;
+	} body;
+} __attribute__((packed));
+
 
 struct hv_kvp_ip_msg {
-	uint8_t                    operation;
-	uint8_t                    pool;
+	uint8_t operation;
+	uint8_t pool;
 	struct hv_kvp_ipaddr_value kvp_ip_val;
-}
-__attribute__((packed));
+} __attribute__((packed));
 
-#define BSD_SOC_PATH                "/usr/local/hyperv/hyperv_socket"
 
 #define HV_SHUT_DOWN                0
 #define HV_TIME_SYNCH               1

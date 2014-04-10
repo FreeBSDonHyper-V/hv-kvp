@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2009-2014 Microsoft Corp.
+ * Copyright (c) 2014 Microsoft Corp.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,8 +58,8 @@
  * Maximum key size - the registry limit for the length of an entry name
  * is 256 characters, including the null terminator
  */
-
 #define HV_KVP_EXCHANGE_MAX_KEY_SIZE    (512)
+
 
 /*
  * In FreeBSD, we implement the KVP functionality in two components:
@@ -109,11 +109,10 @@
  * (not supported), a NULL key string is returned.
  */
 
-
+ 
 /*
  * Registry value types.
  */
-
 #define HV_REG_SZ     1
 #define HV_REG_U32    4
 #define HV_REG_U64    8
@@ -122,7 +121,6 @@
 /*
  * Daemon code supporting IP injection.
  */
-
 #define HV_KVP_OP_REGISTER    4
 
 
@@ -144,6 +142,7 @@ enum hv_kvp_exchg_pool {
 	HV_KVP_POOL_AUTO_INTERNAL,
 	HV_KVP_POOL_COUNT /* Number of pools, must be last. */
 };
+
 
 /*
  * Some Hyper-V status codes.
@@ -175,7 +174,6 @@ struct hv_kvp_ipaddr_value {
 	uint16_t gate_way[MAX_GATEWAY_SIZE];
 	uint16_t dns_addr[MAX_IP_ADDR_SIZE];
 }__attribute__((packed));
-
 
 struct hv_kvp_hdr {
 	uint8_t  operation;
@@ -219,16 +217,16 @@ struct hv_kvp_register {
 
 struct hv_kvp_msg {
 	union {
-		struct hv_kvp_hdr	kvp_hdr;
+		struct hv_kvp_hdr kvp_hdr;
 		int error;
 	} hdr;
 	union {
-		struct hv_kvp_msg_get       kvp_get;
-		struct hv_kvp_msg_set       kvp_set;
-		struct hv_kvp_msg_delete    kvp_delete;
-		struct hv_kvp_msg_enumerate kvp_enum_data;
-		struct hv_kvp_ipaddr_value  kvp_ip_val;
-		struct hv_kvp_register	kvp_register;
+		struct hv_kvp_msg_get		kvp_get;
+		struct hv_kvp_msg_set		kvp_set;
+		struct hv_kvp_msg_delete	kvp_delete;
+		struct hv_kvp_msg_enumerate	kvp_enum_data;
+		struct hv_kvp_ipaddr_value	kvp_ip_val;
+		struct hv_kvp_register		kvp_register;
 	} body;
 } __attribute__((packed));
 
@@ -238,7 +236,6 @@ struct hv_kvp_ip_msg {
 	struct hv_kvp_ipaddr_value      kvp_ip_val;
 } __attribute__((packed));
 
-#define BSD_SOC_PATH                "/usr/local/hyperv/hyperv_socket"
 
 #define HV_SHUT_DOWN                0
 #define HV_TIME_SYNCH               1
