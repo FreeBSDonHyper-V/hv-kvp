@@ -97,6 +97,8 @@ hv_vmbus_service service_table[] = {
  */
 uint8_t *receive_buffer[HV_MAX_UTIL_SERVICES];
 
+static boolean_t destroyed_kvp = FALSE;
+
 struct hv_ictimesync_data {
 	uint64_t    parenttime;
 	uint64_t    childtime;
@@ -428,6 +430,11 @@ hv_util_detach(device_t dev)
 	struct hv_vmbus_service*	service;
 	size_t				receive_buffer_offset;
 
+	if (!destroyed_kvp) {
+		hv_kvp_deinit();
+		destroyed_kvp = TRUE;
+	}
+
 	hv_dev = vmbus_get_devctx(dev);
 
 	hv_vmbus_channel_close(hv_dev->channel);
@@ -454,7 +461,6 @@ hv_util_modevent(module_t mod, int event, void *arg)
         case MOD_LOAD:
                 break;
         case MOD_UNLOAD:
-		hv_kvp_deinit();
 		break;
 	default:
 		break;

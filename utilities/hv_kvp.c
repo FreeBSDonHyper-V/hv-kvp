@@ -24,7 +24,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- /*-
+/*-
  * Copyright (c) 2007 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
@@ -81,6 +81,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/endian.h>
 #include <sys/_null.h>
 
+#include <sys/iconv.h>
+#include <sys/signal.h>
+
 #include <net/if_arp.h>
 
 #include <dev/hyperv/include/hyperv.h>
@@ -120,6 +123,7 @@ static struct cdevsw hv_kvp_cdevsw =
 static struct timeout_task delay_task; 
 static struct cdev *hv_kvp_dev;
 static struct hv_kvp_msg *hv_kvp_dev_buf;
+struct proc *daemon_task;
 
 /*
  * We maintain a global state, assuming only one transaction can be active
@@ -386,6 +390,27 @@ hv_kvp_convert_utf8_ipinfo_to_utf16(struct hv_kvp_msg *umsg,
 				    struct hv_kvp_ip_msg *host_ip_msg)
 {
 	int err_ip, err_subnet, err_gway, err_dns, err_adap;
+ 		
+
+	/*{
+	void *handle;
+	const char *src; 
+	char *dst;
+	size_t src_len, dst_len;
+
+	src = (char *)umsg->body.kvp_ip_val.ip_addr; 
+	dst = (char *)host_ip_msg->kvp_ip_val.ip_addr;
+	src_len = (size_t)strlen((char *)umsg->body.kvp_ip_val.ip_addr);
+	dst_len = (size_t)MAX_IP_ADDR_SIZE;
+	iconv_open("UTF16LE", "UTF8", &handle);
+   	 iconv_conv(handle,
+			 &src,
+			&src_len,
+			&dst,
+			&dst_len);
+    	iconv_close(handle);
+	printf("%s\n",dst);
+	}*/
 
 	hv_kvp_convert8_to_16((uint16_t *)host_ip_msg->kvp_ip_val.ip_addr,
 	    MAX_IP_ADDR_SIZE,
@@ -831,7 +856,7 @@ hv_kvp_dev_init(void)
 			0,
 			UID_ROOT,
 			GID_WHEEL,
-			0600,
+			0640,
 			"hv_kvp_dev");
 					   
 	if (error != 0)
@@ -852,6 +877,12 @@ static void
 hv_kvp_dev_destroy(void)
 {
 
+        if (daemon_task != NULL) {
+		PROC_LOCK(daemon_task);
+        	kern_psignal(daemon_task, SIGKILL);
+		PROC_UNLOCK(daemon_task);
+	}
+	
 	destroy_dev(hv_kvp_dev);
 	free(hv_kvp_dev_buf, M_HV_KVP_DEV_BUF);
 	return;
@@ -859,14 +890,15 @@ hv_kvp_dev_destroy(void)
 
 
 static int
-hv_kvp_dev_open(struct cdev *dev __unused, int oflags __unused, int devtype __unused,
-				struct thread *td __unused)
+hv_kvp_dev_open(struct cdev *dev, int oflags, int devtype,
+				struct thread *td)
 {
-
+	
 	uprintf("Opened device \"hv_kvp_device\" successfully.\n");
 	if (dev_accessed)
 		return (-EBUSY);
 	
+	daemon_task = curproc;
 	dev_accessed = TRUE;
 	return (0);
 }
