@@ -1,6 +1,6 @@
 Index: etc/rc.d/Makefile
 ===================================================================
---- etc/rc.d/Makefile	(revision 264316)
+--- etc/rc.d/Makefile	(revision 264335)
 +++ etc/rc.d/Makefile	(working copy)
 @@ -54,6 +54,7 @@
  	hostid \
@@ -67,6 +67,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 + * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 + * SOFTWARE.
 + */
++
 +/*
 + *      Author: Sainath Varanasi.
 + *      Date:   4/2012
@@ -106,8 +107,8 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 + * Maximum key size - the registry limit for the length of an entry name
 + * is 256 characters, including the null terminator
 + */
-+
 +#define HV_KVP_EXCHANGE_MAX_KEY_SIZE    (512)
++
 +
 +/*
 + * In FreeBSD, we implement the KVP functionality in two components:
@@ -157,6 +158,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 + * (not supported), a NULL key string is returned.
 + */
 +
++
 +/*
 + * Registry value types.
 + */
@@ -164,10 +166,12 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 +#define HV_REG_U32    4
 +#define HV_REG_U64    8
 +
++
 +/*
 + * Daemon code supporting IP injection.
 + */
 +#define HV_KVP_OP_REGISTER    4
++
 +
 +enum hv_kvp_exchg_op {
 +	HV_KVP_OP_GET = 0,
@@ -179,6 +183,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 +	HV_KVP_OP_COUNT /* Number of operations, must be last. */
 +};
 +
++
 +enum hv_kvp_exchg_pool {
 +	HV_KVP_POOL_EXTERNAL = 0,
 +	HV_KVP_POOL_GUEST,
@@ -187,6 +192,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 +	HV_KVP_POOL_AUTO_INTERNAL,
 +	HV_KVP_POOL_COUNT /* Number of pools, must be last. */
 +};
++
 +
 +/*
 + * Some Hyper-V status codes.
@@ -217,16 +223,15 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 +	uint16_t sub_net[MAX_IP_ADDR_SIZE];
 +	uint16_t gate_way[MAX_GATEWAY_SIZE];
 +	uint16_t dns_addr[MAX_IP_ADDR_SIZE];
-+}
-+__attribute__((packed));
++} __attribute__((packed));
 +
 +
 +struct hv_kvp_hdr {
 +	uint8_t  operation;
 +	uint8_t  pool;
 +	uint16_t pad;
-+}
-+__attribute__((packed));
++} __attribute__((packed));
++
 +
 +struct hv_kvp_exchg_msg_value {
 +	uint32_t value_type;
@@ -237,64 +242,59 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 +		uint8_t  value[HV_KVP_EXCHANGE_MAX_VALUE_SIZE];
 +		uint32_t value_u32;
 +		uint64_t value_u64;
-+	}
-+		 msg_value;
-+}
-+__attribute__((packed));
++	} msg_value;
++} __attribute__((packed));
++
 +
 +struct hv_kvp_msg_enumerate {
-+	uint32_t                      index;
++	uint32_t index;
 +	struct hv_kvp_exchg_msg_value data;
-+}
-+__attribute__((packed));
++} __attribute__((packed));
++
 +
 +struct hv_kvp_msg_get {
 +	struct hv_kvp_exchg_msg_value data;
-+}
-+__attribute__((packed));
++} __attribute__((packed));
++
 +
 +struct hv_kvp_msg_set {
 +	struct hv_kvp_exchg_msg_value data;
-+}
-+__attribute__((packed));
++} __attribute__((packed));
++
 +
 +struct hv_kvp_msg_delete {
 +	uint32_t key_size;
-+	uint8_t  key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-+}
-+__attribute__((packed));
++	uint8_t key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
++} __attribute__((packed));
++
 +
 +struct hv_kvp_register {
 +	uint8_t version[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-+}
-+__attribute__((packed));
++} __attribute__((packed));
++
 +
 +struct hv_kvp_msg {
 +	union {
 +		struct hv_kvp_hdr kvp_hdr;
-+		int               error;
-+	}
-+	hdr;
++		int error;
++	} hdr;
 +	union {
-+		struct hv_kvp_msg_get       kvp_get;
-+		struct hv_kvp_msg_set       kvp_set;
-+		struct hv_kvp_msg_delete    kvp_delete;
-+		struct hv_kvp_msg_enumerate kvp_enum_data;
-+		struct hv_kvp_ipaddr_value  kvp_ip_val;
-+		struct hv_kvp_register      kvp_register;
-+	}
-+	body;
-+}
-+__attribute__((packed));
++		struct hv_kvp_msg_get		kvp_get;
++		struct hv_kvp_msg_set		kvp_set;
++		struct hv_kvp_msg_delete	kvp_delete;
++		struct hv_kvp_msg_enumerate	kvp_enum_data;
++		struct hv_kvp_ipaddr_value	kvp_ip_val;
++		struct hv_kvp_register		kvp_register;
++	} body;
++} __attribute__((packed));
++
 +
 +struct hv_kvp_ip_msg {
-+	uint8_t                    operation;
-+	uint8_t                    pool;
++	uint8_t operation;
++	uint8_t pool;
 +	struct hv_kvp_ipaddr_value kvp_ip_val;
-+}
-+__attribute__((packed));
++} __attribute__((packed));
 +
-+#define BSD_SOC_PATH                "/usr/local/hyperv/hyperv_socket"
 +
 +#define HV_SHUT_DOWN                0
 +#define HV_TIME_SYNCH               1
@@ -311,10 +311,6 @@ Index: sbin/hv_kvp_daemon/hv_kvp.h
 
 Property changes on: sbin/hv_kvp_daemon/hv_kvp.h
 ___________________________________________________________________
-Added: svn:keywords
-## -0,0 +1 ##
-+FreeBSD=%H
-\ No newline at end of property
 Added: svn:eol-style
 ## -0,0 +1 ##
 +native
@@ -322,6 +318,10 @@ Added: svn:eol-style
 Added: svn:mime-type
 ## -0,0 +1 ##
 +text/plain
+\ No newline at end of property
+Added: svn:keywords
+## -0,0 +1 ##
++FreeBSD=%H
 \ No newline at end of property
 Index: sbin/hv_kvp_daemon/hv_kvp_daemon.8
 ===================================================================
@@ -399,6 +399,10 @@ Index: sbin/hv_kvp_daemon/hv_kvp_daemon.8
 
 Property changes on: sbin/hv_kvp_daemon/hv_kvp_daemon.8
 ___________________________________________________________________
+Added: svn:eol-style
+## -0,0 +1 ##
++native
+\ No newline at end of property
 Added: svn:mime-type
 ## -0,0 +1 ##
 +text/plain
@@ -406,10 +410,6 @@ Added: svn:mime-type
 Added: svn:keywords
 ## -0,0 +1 ##
 +FreeBSD=%H
-\ No newline at end of property
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
 \ No newline at end of property
 Index: sbin/hv_kvp_daemon/hv_kvp_daemon.c
 ===================================================================
@@ -2072,7 +2072,7 @@ Index: sbin/hv_kvp_daemon/scripts/hv_set_ifconfig
 +echo "Set IP-Injection Success"
 Index: sys/conf/files.amd64
 ===================================================================
---- sys/conf/files.amd64	(revision 264316)
+--- sys/conf/files.amd64	(revision 264335)
 +++ sys/conf/files.amd64	(working copy)
 @@ -224,6 +224,7 @@
  dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
@@ -2084,7 +2084,7 @@ Index: sys/conf/files.amd64
  dev/hyperv/vmbus/hv_channel_mgmt.c			optional	hyperv
 Index: sys/conf/files.i386
 ===================================================================
---- sys/conf/files.i386	(revision 264316)
+--- sys/conf/files.i386	(revision 264335)
 +++ sys/conf/files.i386	(working copy)
 @@ -215,6 +215,7 @@
  dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
@@ -2098,7 +2098,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 ===================================================================
 --- sys/dev/hyperv/utilities/hv_kvp.c	(revision 0)
 +++ sys/dev/hyperv/utilities/hv_kvp.c	(working copy)
-@@ -0,0 +1,986 @@
+@@ -0,0 +1,1018 @@
 +/*-
 + * Copyright (c) 2014 Microsoft Corp.
 + * All rights reserved.
@@ -2125,7 +2125,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 + * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 + */
 +
-+ /*-
++/*-
 + * Copyright (c) 2007 The NetBSD Foundation, Inc.
 + * All rights reserved.
 + *
@@ -2182,6 +2182,9 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +#include <sys/endian.h>
 +#include <sys/_null.h>
 +
++#include <sys/iconv.h>
++#include <sys/signal.h>
++
 +#include <net/if_arp.h>
 +
 +#include <dev/hyperv/include/hyperv.h>
@@ -2221,6 +2224,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +static struct timeout_task delay_task; 
 +static struct cdev *hv_kvp_dev;
 +static struct hv_kvp_msg *hv_kvp_dev_buf;
++struct proc *daemon_task;
 +
 +/*
 + * We maintain a global state, assuming only one transaction can be active
@@ -2487,6 +2491,27 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +				    struct hv_kvp_ip_msg *host_ip_msg)
 +{
 +	int err_ip, err_subnet, err_gway, err_dns, err_adap;
++ 		
++
++	/*{
++	void *handle;
++	const char *src; 
++	char *dst;
++	size_t src_len, dst_len;
++
++	src = (char *)umsg->body.kvp_ip_val.ip_addr; 
++	dst = (char *)host_ip_msg->kvp_ip_val.ip_addr;
++	src_len = (size_t)strlen((char *)umsg->body.kvp_ip_val.ip_addr);
++	dst_len = (size_t)MAX_IP_ADDR_SIZE;
++	iconv_open("UTF16LE", "UTF8", &handle);
++   	 iconv_conv(handle,
++			 &src,
++			&src_len,
++			&dst,
++			&dst_len);
++    	iconv_close(handle);
++	printf("%s\n",dst);
++	}*/
 +
 +	hv_kvp_convert8_to_16((uint16_t *)host_ip_msg->kvp_ip_val.ip_addr,
 +	    MAX_IP_ADDR_SIZE,
@@ -2932,7 +2957,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +			0,
 +			UID_ROOT,
 +			GID_WHEEL,
-+			0600,
++			0640,
 +			"hv_kvp_dev");
 +					   
 +	if (error != 0)
@@ -2953,6 +2978,12 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +hv_kvp_dev_destroy(void)
 +{
 +
++        if (daemon_task != NULL) {
++		PROC_LOCK(daemon_task);
++        	kern_psignal(daemon_task, SIGKILL);
++		PROC_UNLOCK(daemon_task);
++	}
++	
 +	destroy_dev(hv_kvp_dev);
 +	free(hv_kvp_dev_buf, M_HV_KVP_DEV_BUF);
 +	return;
@@ -2960,14 +2991,15 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +
 +
 +static int
-+hv_kvp_dev_open(struct cdev *dev __unused, int oflags __unused, int devtype __unused,
-+				struct thread *td __unused)
++hv_kvp_dev_open(struct cdev *dev, int oflags, int devtype,
++				struct thread *td)
 +{
 +
 +	uprintf("Opened device \"hv_kvp_device\" successfully.\n");
 +	if (dev_accessed)
 +		return (-EBUSY);
 +	
++	daemon_task = curproc;
 +	dev_accessed = TRUE;
 +	return (0);
 +}
@@ -3088,6 +3120,10 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 
 Property changes on: sys/dev/hyperv/utilities/hv_kvp.c
 ___________________________________________________________________
+Added: svn:eol-style
+## -0,0 +1 ##
++native
+\ No newline at end of property
 Added: svn:mime-type
 ## -0,0 +1 ##
 +text/plain
@@ -3096,13 +3132,9 @@ Added: svn:keywords
 ## -0,0 +1 ##
 +FreeBSD=%H
 \ No newline at end of property
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
 Index: sys/dev/hyperv/utilities/hv_kvp.h
 ===================================================================
---- sys/dev/hyperv/utilities/hv_kvp.h	(revision 264316)
+--- sys/dev/hyperv/utilities/hv_kvp.h	(revision 264335)
 +++ sys/dev/hyperv/utilities/hv_kvp.h	(working copy)
 @@ -1,7 +1,5 @@
  /*-
@@ -3346,7 +3378,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.h
  #endif /* _KVP_H */
 Index: sys/dev/hyperv/utilities/hv_util.c
 ===================================================================
---- sys/dev/hyperv/utilities/hv_util.c	(revision 264316)
+--- sys/dev/hyperv/utilities/hv_util.c	(revision 264335)
 +++ sys/dev/hyperv/utilities/hv_util.c	(working copy)
 @@ -1,7 +1,5 @@
  /*-
@@ -3394,7 +3426,16 @@ Index: sys/dev/hyperv/utilities/hv_util.c
  };
  
  /*
-@@ -143,7 +150,7 @@
+@@ -90,6 +97,8 @@
+  */
+ uint8_t *receive_buffer[HV_MAX_UTIL_SERVICES];
+ 
++static boolean_t destroyed_kvp = FALSE;
++
+ struct hv_ictimesync_data {
+ 	uint64_t    parenttime;
+ 	uint64_t    childtime;
+@@ -143,7 +152,7 @@
  static void
  hv_set_host_time(void *context)
  {
@@ -3403,7 +3444,7 @@ Index: sys/dev/hyperv/utilities/hv_util.c
  	uint64_t hosttime = time_msg->data;
  	struct timespec guest_ts, host_ts;
  	uint64_t host_tns;
-@@ -253,12 +260,12 @@
+@@ -253,12 +262,12 @@
  static void
  hv_shutdown_cb(void *context)
  {
@@ -3420,7 +3461,19 @@ Index: sys/dev/hyperv/utilities/hv_util.c
  	int				ret;
  	hv_vmbus_shutdown_msg_data*	shutdown_msg;
  
-@@ -432,21 +439,23 @@
+@@ -421,6 +430,11 @@
+ 	struct hv_vmbus_service*	service;
+ 	size_t				receive_buffer_offset;
+ 
++	if (!destroyed_kvp) {
++		hv_kvp_deinit();
++		destroyed_kvp = TRUE;
++	}
++
+ 	hv_dev = vmbus_get_devctx(dev);
+ 
+ 	hv_vmbus_channel_close(hv_dev->channel);
+@@ -432,21 +446,22 @@
  
  	free(receive_buffer[receive_buffer_offset], M_DEVBUF);
  	receive_buffer[receive_buffer_offset] = NULL;
@@ -3443,14 +3496,13 @@ Index: sys/dev/hyperv/utilities/hv_util.c
                  break;
          case MOD_UNLOAD:
 -                break;
-+		hv_kvp_deinit();
 +		break;
  	default:
  		break;
          }
 Index: sys/modules/hyperv/utilities/Makefile
 ===================================================================
---- sys/modules/hyperv/utilities/Makefile	(revision 264316)
+--- sys/modules/hyperv/utilities/Makefile	(revision 264335)
 +++ sys/modules/hyperv/utilities/Makefile	(working copy)
 @@ -3,7 +3,7 @@
  .PATH:	${.CURDIR}/../../../dev/hyperv/utilities
@@ -3463,7 +3515,7 @@ Index: sys/modules/hyperv/utilities/Makefile
  CFLAGS+= -I${.CURDIR}/../../../dev/hyperv/include \
 Index: usr.sbin/Makefile
 ===================================================================
---- usr.sbin/Makefile	(revision 264316)
+--- usr.sbin/Makefile	(revision 264335)
 +++ usr.sbin/Makefile	(working copy)
 @@ -33,6 +33,7 @@
  	getfmac \
@@ -3477,7 +3529,7 @@ Index: usr.sbin/hv_kvp_daemon/Makefile
 ===================================================================
 --- usr.sbin/hv_kvp_daemon/Makefile	(revision 0)
 +++ usr.sbin/hv_kvp_daemon/Makefile	(working copy)
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,23 @@
 +# $FreeBSD hyperv-ic Makefile  $
 +
 +.include <bsd.own.mk>
@@ -3493,6 +3545,7 @@ Index: usr.sbin/hv_kvp_daemon/Makefile
 +	${CC} -o ${PROG}  ${HV_KVP_DAEMON_DISTDIR}/${PROG}.c 
 +
 +beforeinstall:
++	chmod 755 ${HV_KVP_DAEMON_DISTDIR}/kvp-install
 +	${SH} ${HV_KVP_DAEMON_DISTDIR}/kvp-install PRE-INSTALL	
 +	
 +afterinstall:
