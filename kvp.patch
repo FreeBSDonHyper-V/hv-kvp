@@ -1,6 +1,6 @@
 Index: etc/rc.d/Makefile
 ===================================================================
---- etc/rc.d/Makefile	(revision 267500)
+--- etc/rc.d/Makefile	(revision 267579)
 +++ etc/rc.d/Makefile	(working copy)
 @@ -54,6 +54,7 @@
  	hostid \
@@ -31,298 +31,6 @@ Index: etc/rc.d/hv_kvpd
 +
 +load_rc_config $name
 +run_rc_command "$1"
-Index: sbin/hv_kvp_daemon/hv_kvp.h
-===================================================================
---- sbin/hv_kvp_daemon/hv_kvp.h	(revision 0)
-+++ sbin/hv_kvp_daemon/hv_kvp.h	(working copy)
-@@ -0,0 +1,272 @@
-+/*-
-+ * Copyright (c) 2014 Microsoft Corp. 
-+ *
-+ * This software is available to you under a choice of one of two
-+ * licenses.  You may choose to be licensed under the terms of the GNU
-+ * General Public License (GPL) Version 2, available from the file
-+ * COPYING in the main directory of this source tree, or the
-+ * OpenIB.org BSD license below:
-+ *
-+ *     Redistribution and use in source and binary forms, with or
-+ *     without modification, are permitted provided that the following
-+ *     conditions are met:
-+ *
-+ *      - Redistributions of source code must retain the above
-+ *        copyright notice, this list of conditions and the following
-+ *        disclaimer.
-+ *
-+ *      - Redistributions in binary form must reproduce the above
-+ *        copyright notice, this list of conditions and the following
-+ *        disclaimer in the documentation and/or other materials
-+ *        provided with the distribution.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-+ * SOFTWARE.
-+ */
-+
-+/*
-+ *      Author: Sainath Varanasi.
-+ *      Date:   4/2012
-+ */
-+
-+#ifndef _KVP_H
-+#define _KVP_H
-+
-+/*
-+ * An implementation of HyperV key value pair (KVP) functionality for FreeBSD
-+ *
-+ */
-+
-+/*
-+ * Maximum value size - used for both key names and value data, and includes
-+ * any applicable NULL terminators.
-+ *
-+ * Note:  This limit is somewhat arbitrary, but falls easily within what is
-+ * supported for all native guests (back to Win 2000) and what is reasonable
-+ * for the IC KVP exchange functionality.  Note that Windows Me/98/95 are
-+ * limited to 255 character key names.
-+ *
-+ * MSDN recommends not storing data values larger than 2048 bytes in the
-+ * registry.
-+ *
-+ * Note:  This value is used in defining the KVP exchange message - this value
-+ * cannot be modified without affecting the message size and compatibility.
-+ */
-+
-+/*
-+ * bytes, including any null terminators
-+ */
-+#define HV_KVP_EXCHANGE_MAX_VALUE_SIZE    (2048)
-+
-+
-+/*
-+ * Maximum key size - the registry limit for the length of an entry name
-+ * is 256 characters, including the null terminator
-+ */
-+#define HV_KVP_EXCHANGE_MAX_KEY_SIZE    (512)
-+
-+
-+/*
-+ * In FreeBSD, we implement the KVP functionality in two components:
-+ * 1) The kernel component which is packaged as part of the hv_utils driver
-+ * is responsible for communicating with the host and responsible for
-+ * implementing the host/guest protocol. 2) A user level daemon that is
-+ * responsible for data gathering.
-+ *
-+ * Host/Guest Protocol: The host iterates over an index and expects the guest
-+ * to assign a key name to the index and also return the value corresponding to
-+ * the key. The host will have atmost one KVP transaction outstanding at any
-+ * given point in time. The host side iteration stops when the guest returns
-+ * an error. Microsoft has specified the following mapping of key names to
-+ * host specified index:
-+ *
-+ *  Index		Key Name
-+ *	0		FullyQualifiedDomainName
-+ *	1		IntegrationServicesVersion
-+ *	2		NetworkAddressIPv4
-+ *	3		NetworkAddressIPv6
-+ *	4		OSBuildNumber
-+ *	5		OSName
-+ *	6		OSMajorVersion
-+ *	7		OSMinorVersion
-+ *	8		OSVersion
-+ *	9		ProcessorArchitecture
-+ *
-+ * The Windows host expects the Key Name and Key Value to be encoded in utf16.
-+ *
-+ * Guest Kernel/KVP Daemon Protocol: As noted earlier, we implement all of the
-+ * data gathering functionality in a user mode daemon. The user level daemon
-+ * is also responsible for binding the key name to the index as well. The
-+ * kernel and user-level daemon communicate using a connector channel.
-+ *
-+ * The user mode component first registers with the
-+ * the kernel component. Subsequently, the kernel component requests, data
-+ * for the specified keys. In response to this message the user mode component
-+ * fills in the value corresponding to the specified key. We overload the
-+ * sequence field in the cn_msg header to define our KVP message types.
-+ *
-+ *
-+ * The kernel component simply acts as a conduit for communication between the
-+ * Windows host and the user-level daemon. The kernel component passes up the
-+ * index received from the Host to the user-level daemon. If the index is
-+ * valid (supported), the corresponding key as well as its
-+ * value (both are strings) is returned. If the index is invalid
-+ * (not supported), a NULL key string is returned.
-+ */
-+
-+
-+/*
-+ * Registry value types.
-+ */
-+#define HV_REG_SZ     1
-+#define HV_REG_U32    4
-+#define HV_REG_U64    8
-+
-+
-+/*
-+ * Daemon code supporting IP injection.
-+ */
-+#define HV_KVP_OP_REGISTER    4
-+
-+
-+enum hv_kvp_exchg_op {
-+	HV_KVP_OP_GET = 0,
-+	HV_KVP_OP_SET,
-+	HV_KVP_OP_DELETE,
-+	HV_KVP_OP_ENUMERATE,
-+	HV_KVP_OP_GET_IP_INFO,
-+	HV_KVP_OP_SET_IP_INFO,
-+	HV_KVP_OP_COUNT /* Number of operations, must be last. */
-+};
-+
-+
-+enum hv_kvp_exchg_pool {
-+	HV_KVP_POOL_EXTERNAL = 0,
-+	HV_KVP_POOL_GUEST,
-+	HV_KVP_POOL_AUTO,
-+	HV_KVP_POOL_AUTO_EXTERNAL,
-+	HV_KVP_POOL_AUTO_INTERNAL,
-+	HV_KVP_POOL_COUNT /* Number of pools, must be last. */
-+};
-+
-+
-+/*
-+ * Some Hyper-V status codes.
-+ */
-+#define HV_KVP_S_OK                      0x00000000
-+#define HV_KVP_E_FAIL                    0x80004005
-+#define HV_KVP_S_CONT                    0x80070103
-+#define HV_ERROR_NOT_SUPPORTED           0x80070032
-+#define HV_ERROR_MACHINE_LOCKED          0x800704F7
-+#define HV_ERROR_DEVICE_NOT_CONNECTED    0x8007048F
-+#define HV_INVALIDARG                    0x80070057
-+#define HV_KVP_GUID_NOTFOUND             0x80041002
-+
-+#define ADDR_FAMILY_NONE                 0x00
-+#define ADDR_FAMILY_IPV4                 0x01
-+#define ADDR_FAMILY_IPV6                 0x02
-+
-+#define MAX_ADAPTER_ID_SIZE              128
-+#define MAX_IP_ADDR_SIZE                 1024
-+#define MAX_GATEWAY_SIZE                 512
-+
-+
-+struct hv_kvp_ipaddr_value {
-+	uint16_t adapter_id[MAX_ADAPTER_ID_SIZE];
-+	uint8_t  addr_family;
-+	uint8_t  dhcp_enabled;
-+	uint16_t ip_addr[MAX_IP_ADDR_SIZE];
-+	uint16_t sub_net[MAX_IP_ADDR_SIZE];
-+	uint16_t gate_way[MAX_GATEWAY_SIZE];
-+	uint16_t dns_addr[MAX_IP_ADDR_SIZE];
-+}__attribute__((packed));
-+
-+
-+struct hv_kvp_hdr {
-+	uint8_t  operation;
-+	uint8_t  pool;
-+	uint16_t pad;
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_exchg_msg_value {
-+	uint32_t value_type;
-+	uint32_t key_size;
-+	uint32_t value_size;
-+	uint8_t  key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-+	union {
-+		uint8_t  value[HV_KVP_EXCHANGE_MAX_VALUE_SIZE];
-+		uint32_t value_u32;
-+		uint64_t value_u64;
-+	} msg_value;
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_msg_enumerate {
-+	uint32_t index;
-+	struct hv_kvp_exchg_msg_value data;
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_msg_get {
-+	struct hv_kvp_exchg_msg_value data;
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_msg_set {
-+	struct hv_kvp_exchg_msg_value data;
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_msg_delete {
-+	uint32_t key_size;
-+	uint8_t key[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_register {
-+	uint8_t version[HV_KVP_EXCHANGE_MAX_KEY_SIZE];
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_msg {
-+	union {
-+		struct hv_kvp_hdr kvp_hdr;
-+		int error;
-+	} hdr;
-+	union {
-+		struct hv_kvp_msg_get		kvp_get;
-+		struct hv_kvp_msg_set		kvp_set;
-+		struct hv_kvp_msg_delete	kvp_delete;
-+		struct hv_kvp_msg_enumerate	kvp_enum_data;
-+		struct hv_kvp_ipaddr_value	kvp_ip_val;
-+		struct hv_kvp_register		kvp_register;
-+	} body;
-+} __attribute__((packed));
-+
-+
-+struct hv_kvp_ip_msg {
-+	uint8_t operation;
-+	uint8_t pool;
-+	struct hv_kvp_ipaddr_value kvp_ip_val;
-+} __attribute__((packed));
-+
-+
-+#define HV_SHUT_DOWN                0
-+#define HV_TIME_SYNCH               1
-+#define HV_HEART_BEAT               2
-+#define HV_KVP                      3
-+#define HV_MAX_UTIL_SERVICES        4
-+
-+#define HV_WLTIMEDELTA              116444736000000000L     /* in 100ns unit */
-+#define HV_ICTIMESYNCFLAG_PROBE     0
-+#define HV_ICTIMESYNCFLAG_SYNC      1
-+#define HV_ICTIMESYNCFLAG_SAMPLE    2
-+#define HV_NANO_SEC_PER_SEC         1000000000
-+#endif /* _KVP_H */
-
-Property changes on: sbin/hv_kvp_daemon/hv_kvp.h
-___________________________________________________________________
-Added: svn:mime-type
-## -0,0 +1 ##
-+text/plain
-\ No newline at end of property
-Added: svn:keywords
-## -0,0 +1 ##
-+FreeBSD=%H
-\ No newline at end of property
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
 Index: sbin/hv_kvp_daemon/hv_kvp_daemon.8
 ===================================================================
 --- sbin/hv_kvp_daemon/hv_kvp_daemon.8	(revision 0)
@@ -399,10 +107,6 @@ Index: sbin/hv_kvp_daemon/hv_kvp_daemon.8
 
 Property changes on: sbin/hv_kvp_daemon/hv_kvp_daemon.8
 ___________________________________________________________________
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
 Added: svn:mime-type
 ## -0,0 +1 ##
 +text/plain
@@ -411,48 +115,37 @@ Added: svn:keywords
 ## -0,0 +1 ##
 +FreeBSD=%H
 \ No newline at end of property
+Added: svn:eol-style
+## -0,0 +1 ##
++native
+\ No newline at end of property
 Index: sbin/hv_kvp_daemon/hv_kvp_daemon.c
 ===================================================================
 --- sbin/hv_kvp_daemon/hv_kvp_daemon.c	(revision 0)
 +++ sbin/hv_kvp_daemon/hv_kvp_daemon.c	(working copy)
-@@ -0,0 +1,1446 @@
-+/*-
-+ * Copyright (c) 2014 Microsoft Corp.
-+ *
-+ * This software is available to you under a choice of one of two
-+ * licenses.  You may choose to be licensed under the terms of the GNU
-+ * General Public License (GPL) Version 2, available from the file
-+ * COPYING in the main directory of this source tree, or the
-+ * OpenIB.org BSD license below:
-+ *
-+ *     Redistribution and use in source and binary forms, with or
-+ *     without modification, are permitted provided that the following
-+ *     conditions are met:
-+ *
-+ *      - Redistributions of source code must retain the above
-+ *        copyright notice, this list of conditions and the following
-+ *        disclaimer.
-+ *
-+ *      - Redistributions in binary form must reproduce the above
-+ *        copyright notice, this list of conditions and the following
-+ *        disclaimer in the documentation and/or other materials
-+ *        provided with the distribution.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-+ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-+ * SOFTWARE.
-+ */
-+
+@@ -0,0 +1,1431 @@
 +/*
-+ *      Author: Sainath Varanasi.
-+ *      Date:   4/2012
++ * An implementation of key value pair (KVP) functionality for Linux.
++ *
++ *
++ * Copyright (C) 2010, Novell, Inc.
++ * Author : K. Y. Srinivasan <ksrinivasan@novell.com>
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published
++ * by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, GOOD TITLE or
++ * NON INFRINGEMENT.  See the GNU General Public License for more
++ * details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
++ *
 + */
-+
 +
 +/* header */
 +#include <sys/types.h>
@@ -480,7 +173,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp_daemon.c
 +#include <net/if_dl.h>
 +#include <net/if_types.h>
 +
-+#include "hv_kvp.h"
++#include "../../sys/dev/hyperv/utilities/hv_kvp.h"
 +
 +typedef uint8_t		__u8;
 +typedef uint16_t	__u16;
@@ -2075,7 +1768,7 @@ Index: sbin/hv_kvp_daemon/scripts/hv_set_ifconfig
 +echo "Set IP-Injection Success"
 Index: sys/conf/files.amd64
 ===================================================================
---- sys/conf/files.amd64	(revision 267500)
+--- sys/conf/files.amd64	(revision 267579)
 +++ sys/conf/files.amd64	(working copy)
 @@ -224,6 +224,7 @@
  dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
@@ -2087,7 +1780,7 @@ Index: sys/conf/files.amd64
  dev/hyperv/vmbus/hv_channel_mgmt.c			optional	hyperv
 Index: sys/conf/files.i386
 ===================================================================
---- sys/conf/files.i386	(revision 267500)
+--- sys/conf/files.i386	(revision 267579)
 +++ sys/conf/files.i386	(working copy)
 @@ -215,6 +215,7 @@
  dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
@@ -2097,11 +1790,50 @@ Index: sys/conf/files.i386
  dev/hyperv/utilities/hv_util.c				optional	hyperv
  dev/hyperv/vmbus/hv_channel.c				optional	hyperv
  dev/hyperv/vmbus/hv_channel_mgmt.c			optional	hyperv
+Index: sys/dev/hyperv/include/hyperv.h
+===================================================================
+--- sys/dev/hyperv/include/hyperv.h	(revision 267579)
++++ sys/dev/hyperv/include/hyperv.h	(working copy)
+@@ -795,5 +795,34 @@
+ 	return (ret);
+ }
+ 
++
++/**
++ * KVP related structures
++ * 
++ */
++typedef struct hv_vmbus_service {
++        hv_guid       guid;             /* Hyper-V GUID */
++        char          *name;            /* name of service */
++        boolean_t     enabled;          /* service enabled */
++        hv_work_queue *work_queue;      /* background work queue */
++
++        /*
++         * function to initialize service
++         */
++        int (*init)(struct hv_vmbus_service *);
++
++        /*
++         * function to process Hyper-V messages
++         */
++        void (*callback)(void *);
++} hv_vmbus_service;
++
++extern uint8_t* receive_buffer[];
++extern hv_vmbus_service service_table[];
++
++void hv_kvp_callback(void *context);
++int hv_kvp_init(hv_vmbus_service *serv);
++void hv_kvp_deinit(void);
++
+ #endif  /* __HYPERV_H__ */
+ 
 Index: sys/dev/hyperv/utilities/hv_kvp.c
 ===================================================================
 --- sys/dev/hyperv/utilities/hv_kvp.c	(revision 0)
 +++ sys/dev/hyperv/utilities/hv_kvp.c	(working copy)
-@@ -0,0 +1,955 @@
+@@ -0,0 +1,975 @@
 +/*-
 + * Copyright (c) 2014 Microsoft Corp.
 + * All rights reserved.
@@ -2129,8 +1861,8 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 + */
 +
 +/*
-+ *      Author: Sainath Varanasi.
-+ *      Date:   4/2012
++ *	Author:	Sainath Varanasi.
++ *	Date:	4/2012
 + *	Email:	bsdic@microsoft.com
 + */
 +
@@ -2156,6 +1888,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +#include <sys/endian.h>
 +#include <sys/_null.h>
 +#include <sys/signal.h>
++#include <sys/syslog.h>
 +#include <sys/mutex.h>
 +#include <net/if_arp.h>
 +
@@ -2170,6 +1903,21 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +#define KVP_SUCCESS	0
 +#define KVP_ERROR	1
 +#define kvp_hdr		hdr.kvp_hdr
++
++/* hv_kvp debug control */
++static int hv_kvp_log = 0;
++SYSCTL_INT(_dev, OID_AUTO, hv_kvp_log, CTLFLAG_RW, &hv_kvp_log, 0,
++	"hv_kvp log");
++
++#define	hv_kvp_log_error(...)	do {				\
++	if (hv_kvp_log > 0)				\
++		log(LOG_ERR, "hv_kvp: " __VA_ARGS__);	\
++} while (0)
++
++#define	hv_kvp_log_info(...) do {				\
++	if (hv_kvp_log > 1)				\
++		log(LOG_INFO, "hv_kvp: " __VA_ARGS__);		\
++} while (0)
 +
 +/* character device prototypes */
 +static d_open_t		hv_kvp_dev_open;
@@ -2595,8 +2343,8 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +		break;
 +
 +	default:
-+		uprintf("daemon_kvp_msg: Invalid operation : %d\n",
-+		    umsg->kvp_hdr.operation);
++		hv_kvp_log_info("%s: daemon_kvp_msg: Invalid operation : %d\n",
++		    __func__, umsg->kvp_hdr.operation);
 +	}
 +}
 +
@@ -2694,7 +2442,8 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +			HV_VMBUS_PACKET_TYPE_DATA_IN_BAND, 0);
 +
 +	if (error)
-+		uprintf("hv_kvp_respond_host: sendpacket error:%d\n", error);
++		hv_kvp_log_info("%s: hv_kvp_respond_host: sendpacket error:%d\n",
++			__func__, error);
 +}
 +
 +
@@ -2728,7 +2477,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +	int ret = 0;
 +	uint64_t pending_cnt = 1;
 +	
-+	printf("entering hv_kvp_process_request\n");
++	hv_kvp_log_info("%s: entering hv_kvp_process_request\n", __func__);
 +	kvp_buf = receive_buffer[HV_KVP];
 +	ret = hv_vmbus_channel_recv_packet(channel, kvp_buf, 2 * PAGE_SIZE,
 +		&recvlen, &requestid);
@@ -2761,24 +2510,24 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +				 */
 +				
 +				kvp_globals.req_in_progress = false;
-+				printf("version negotiated\n");
++				hv_kvp_log_info("%s :version negotiated\n", __func__);
 +
 +			} else {
 +				if (!kvp_globals.daemon_busy) {
 +
-+					printf("issuing qury to daemon\n");
++					hv_kvp_log_info("%s: issuing qury to daemon\n", __func__);
 +					mtx_lock(&kvp_globals.pending_mutex);
 +					kvp_globals.req_timed_out = false;
 +					kvp_globals.daemon_busy = true;
 +					mtx_unlock(&kvp_globals.pending_mutex);
 +
 +					hv_kvp_send_msg_to_daemon();
-+					printf("waiting for daemon\n");
++					hv_kvp_log_info("%s: waiting for daemon\n", __func__);
 +				}
 +				
 +				/* Wait 5 seconds for daemon to respond back */
 +				tsleep(&kvp_globals, 0, "kvpworkitem", 5 * hz);
-+				printf("came out of wait\n");
++				hv_kvp_log_info("%s: came out of wait\n", __func__);
 +			}
 +		}
 +
@@ -2796,7 +2545,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +		 * Cancel request if so need be.
 +		 */
 +		if (hv_kvp_req_in_progress()) {
-+			printf("request was still active after wait so failing\n");
++			hv_kvp_log_info("%s: request was still active after wait so failing\n", __func__);
 +			hv_kvp_respond_host(HV_KVP_E_FAIL);
 +			kvp_globals.req_in_progress = false;	
 +		}
@@ -2817,7 +2566,8 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +		recvlen = 0;
 +		ret = hv_vmbus_channel_recv_packet(channel, kvp_buf, 2 * PAGE_SIZE,
 +			&recvlen, &requestid);
-+		printf("read: context %p, pending_cnt %lu ret =%d, recvlen=%d\n", context, pending_cnt, ret, recvlen);
++		hv_kvp_log_info("%s: read: context %p, pending_cnt %lu ret =%d, recvlen=%d\n",
++			__func__, context, pending_cnt, ret, recvlen);
 +	} 
 +}
 +
@@ -2840,7 +2590,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +		pending_cnt = kvp_globals.pending_reqs;
 +		mtx_unlock(&kvp_globals.pending_mutex);
 +		if (pending_cnt == 1) {
-+			printf("Queuing work item\n");
++			hv_kvp_log_info("%s: Queuing work item\n", __func__);
 +			hv_queue_work_item(
 +					service_table[HV_KVP].work_queue,
 +					hv_kvp_process_request,
@@ -2883,6 +2633,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +	if (!hv_kvp_dev_buf) {
 +		destroy_dev(hv_kvp_dev);
 +		error = ENOMEM;
++		hv_kvp_log_error("%s: ENOMEM\n", __func__);
 +	}
 +
 +	return (error);
@@ -2914,7 +2665,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +				struct thread *td)
 +{
 +	
-+	uprintf("Opened device \"hv_kvp_device\" successfully.\n");
++	hv_kvp_log_info("%s: Opened device \"hv_kvp_device\" successfully.\n", __func__);
 +	if (kvp_globals.dev_accessed)
 +		return (-EBUSY);
 +	
@@ -2929,7 +2680,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +				 struct thread *td __unused)
 +{
 +
-+	uprintf("Closing device \"hv_kvp_device\".\n");
++	hv_kvp_log_info("%s: Closing device \"hv_kvp_device\".\n", __func__);
 +	kvp_globals.dev_accessed = false;
 +	kvp_globals.register_done = false;
 +	return (0);
@@ -2958,7 +2709,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +		BUFFERSIZE + 1 - uio->uio_offset);
 +
 +	if ((error = uiomove(hv_kvp_dev_buf, amt, uio)) != 0)
-+		uprintf("hv_kvp uiomove read failed!\n");
++		hv_kvp_log_info("%s: hv_kvp uiomove read failed!\n", __func__);
 +
 +	return (error);
 +}
@@ -2994,7 +2745,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +			}
 +		}
 +		else {
-+			uprintf(" KVP Registration Failed\n");
++			hv_kvp_log_info("%s, KVP Registration Failed\n", __func__);
 +			return (KVP_ERROR);
 +		}
 +	} else {
@@ -3032,8 +2783,9 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 +
 +	work_queue = hv_work_queue_create("KVP Service");
 +	if (work_queue == NULL) {
-+		uprintf("hv_kvp_init: Work queue alloc failed\n");
++		hv_kvp_log_info("%s: Work queue alloc failed\n", __func__);
 +		error = ENOMEM;
++		hv_kvp_log_error("%s: ENOMEM\n", __func__);
 +		goto Finish;
 +	}
 +	srv->work_queue = work_queue;
@@ -3074,7 +2826,7 @@ Added: svn:eol-style
 \ No newline at end of property
 Index: sys/dev/hyperv/utilities/hv_kvp.h
 ===================================================================
---- sys/dev/hyperv/utilities/hv_kvp.h	(revision 267500)
+--- sys/dev/hyperv/utilities/hv_kvp.h	(revision 267579)
 +++ sys/dev/hyperv/utilities/hv_kvp.h	(working copy)
 @@ -1,7 +1,5 @@
  /*-
@@ -3250,7 +3002,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.h
  	} body;
  } __attribute__((packed));
  
-@@ -248,38 +236,40 @@
+@@ -248,38 +236,17 @@
  	struct hv_kvp_ipaddr_value      kvp_ip_val;
  } __attribute__((packed));
  
@@ -3278,7 +3030,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.h
 +#define HV_ICTIMESYNCFLAG_SAMPLE    2
 +#define HV_NANO_SEC_PER_SEC         1000000000
  
- typedef struct hv_vmbus_service {
+-typedef struct hv_vmbus_service {
 -	hv_guid		guid;		/* Hyper-V GUID */
 -       char*			name;		/* name of service */
 -       boolean_t		enabled;	/* service enabled */
@@ -3293,32 +3045,15 @@ Index: sys/dev/hyperv/utilities/hv_kvp.h
 -	// function to process Hyper-V messages 
 -	//
 -       void (*callback)(void *);
-+	hv_guid       guid;             /* Hyper-V GUID */
-+	char          *name;            /* name of service */
-+	boolean_t     enabled;          /* service enabled */
-+	hv_work_queue *work_queue;      /* background work queue */
-+
-+	/*
-+	 * function to initialize service
-+	 */
-+	int (*init)(struct hv_vmbus_service *);
-+
-+	/*
-+	 * function to process Hyper-V messages
-+	 */
-+	void (*callback)(void *);
- } hv_vmbus_service;
- 
- extern uint8_t* receive_buffer[];
- extern hv_vmbus_service service_table[];
- 
-+void hv_kvp_callback(void *context);
-+int hv_kvp_init(hv_vmbus_service *serv);
-+void hv_kvp_deinit(void);
+-} hv_vmbus_service;
+-
+-extern uint8_t* receive_buffer[];
+-extern hv_vmbus_service service_table[];
+-
  #endif /* _KVP_H */
 Index: sys/dev/hyperv/utilities/hv_util.c
 ===================================================================
---- sys/dev/hyperv/utilities/hv_util.c	(revision 267500)
+--- sys/dev/hyperv/utilities/hv_util.c	(revision 267579)
 +++ sys/dev/hyperv/utilities/hv_util.c	(working copy)
 @@ -1,7 +1,5 @@
  /*-
@@ -3647,10 +3382,6 @@ Index: sys/dev/hyperv/utilities/unicode.h
 
 Property changes on: sys/dev/hyperv/utilities/unicode.h
 ___________________________________________________________________
-Added: svn:eol-style
-## -0,0 +1 ##
-+native
-\ No newline at end of property
 Added: svn:mime-type
 ## -0,0 +1 ##
 +text/plain
@@ -3659,9 +3390,13 @@ Added: svn:keywords
 ## -0,0 +1 ##
 +FreeBSD=%H
 \ No newline at end of property
+Added: svn:eol-style
+## -0,0 +1 ##
++native
+\ No newline at end of property
 Index: sys/modules/hyperv/utilities/Makefile
 ===================================================================
---- sys/modules/hyperv/utilities/Makefile	(revision 267500)
+--- sys/modules/hyperv/utilities/Makefile	(revision 267579)
 +++ sys/modules/hyperv/utilities/Makefile	(working copy)
 @@ -3,7 +3,7 @@
  .PATH:	${.CURDIR}/../../../dev/hyperv/utilities
@@ -3674,7 +3409,7 @@ Index: sys/modules/hyperv/utilities/Makefile
  CFLAGS+= -I${.CURDIR}/../../../dev/hyperv/include \
 Index: usr.sbin/Makefile
 ===================================================================
---- usr.sbin/Makefile	(revision 267500)
+--- usr.sbin/Makefile	(revision 267579)
 +++ usr.sbin/Makefile	(working copy)
 @@ -33,6 +33,7 @@
  	getfmac \
