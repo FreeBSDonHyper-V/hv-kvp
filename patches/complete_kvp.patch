@@ -1,40 +1,7 @@
-Index: etc/rc.d/Makefile
+Index: contrib/hyperv/daemons/hv_kvp_daemon.8
 ===================================================================
---- etc/rc.d/Makefile	(revision 267579)
-+++ etc/rc.d/Makefile	(working copy)
-@@ -54,6 +54,7 @@
- 	hostid \
- 	hostid_save \
- 	hostname \
-+	hv_kvpd \
- 	inetd \
- 	initrandom \
- 	ip6addrctl \
-Index: etc/rc.d/hv_kvpd
-===================================================================
---- etc/rc.d/hv_kvpd	(revision 0)
-+++ etc/rc.d/hv_kvpd	(working copy)
-@@ -0,0 +1,16 @@
-+#!/bin/sh
-+#
-+# $FreeBSD: src/etc/rc.d/hv_kvpd $
-+#
-+
-+# PROVIDE: hv_kvpd
-+
-+. /etc/rc.subr
-+
-+name="hv_kvp_daemon"
-+rcvar=`hv_kvp_daemon`
-+command="/usr/sbin/${name}"
-+required_dirs="/usr/local/hyperv"
-+
-+load_rc_config $name
-+run_rc_command "$1"
-Index: sbin/hv_kvp_daemon/hv_kvp_daemon.8
-===================================================================
---- sbin/hv_kvp_daemon/hv_kvp_daemon.8	(revision 0)
-+++ sbin/hv_kvp_daemon/hv_kvp_daemon.8	(working copy)
+--- contrib/hyperv/daemons/hv_kvp_daemon.8	(revision 0)
++++ contrib/hyperv/daemons/hv_kvp_daemon.8	(working copy)
 @@ -0,0 +1,68 @@
 +.\" Copyright (c) 2014 Microsoft Corp.
 +.\" All rights reserved.
@@ -105,7 +72,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp_daemon.8
 +support for \fBhv_kvp_daemon\fP was first added by
 +.An Microsoft BSD Integration Services Team Aq bsdic@microsoft.com .
 
-Property changes on: sbin/hv_kvp_daemon/hv_kvp_daemon.8
+Property changes on: contrib/hyperv/daemons/hv_kvp_daemon.8
 ___________________________________________________________________
 Added: svn:mime-type
 ## -0,0 +1 ##
@@ -119,10 +86,10 @@ Added: svn:eol-style
 ## -0,0 +1 ##
 +native
 \ No newline at end of property
-Index: sbin/hv_kvp_daemon/hv_kvp_daemon.c
+Index: contrib/hyperv/daemons/hv_kvp_daemon.c
 ===================================================================
---- sbin/hv_kvp_daemon/hv_kvp_daemon.c	(revision 0)
-+++ sbin/hv_kvp_daemon/hv_kvp_daemon.c	(working copy)
+--- contrib/hyperv/daemons/hv_kvp_daemon.c	(revision 0)
++++ contrib/hyperv/daemons/hv_kvp_daemon.c	(working copy)
 @@ -0,0 +1,1431 @@
 +/*
 + * An implementation of key value pair (KVP) functionality for Linux.
@@ -173,7 +140,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp_daemon.c
 +#include <net/if_dl.h>
 +#include <net/if_types.h>
 +
-+#include "../../sys/dev/hyperv/utilities/hv_kvp.h"
++#include "../../../sys/dev/hyperv/utilities/hv_kvp.h"
 +
 +typedef uint8_t		__u8;
 +typedef uint16_t	__u16;
@@ -1556,7 +1523,7 @@ Index: sbin/hv_kvp_daemon/hv_kvp_daemon.c
 +	}
 +}
 
-Property changes on: sbin/hv_kvp_daemon/hv_kvp_daemon.c
+Property changes on: contrib/hyperv/daemons/hv_kvp_daemon.c
 ___________________________________________________________________
 Added: svn:mime-type
 ## -0,0 +1 ##
@@ -1570,10 +1537,10 @@ Added: svn:eol-style
 ## -0,0 +1 ##
 +native
 \ No newline at end of property
-Index: sbin/hv_kvp_daemon/kvp-install
+Index: contrib/hyperv/daemons/kvp-install
 ===================================================================
---- sbin/hv_kvp_daemon/kvp-install	(revision 0)
-+++ sbin/hv_kvp_daemon/kvp-install	(working copy)
+--- contrib/hyperv/daemons/kvp-install	(revision 0)
++++ contrib/hyperv/daemons/kvp-install	(working copy)
 @@ -0,0 +1,41 @@
 +#!/bin/sh
 +#
@@ -1617,16 +1584,16 @@ Index: sbin/hv_kvp_daemon/kvp-install
 +fi
 +exit 0
 
-Property changes on: sbin/hv_kvp_daemon/kvp-install
+Property changes on: contrib/hyperv/daemons/kvp-install
 ___________________________________________________________________
 Added: svn:executable
 ## -0,0 +1 ##
 +*
 \ No newline at end of property
-Index: sbin/hv_kvp_daemon/scripts/hv_get_dhcp_info
+Index: contrib/hyperv/daemons/scripts/hv_get_dhcp_info
 ===================================================================
---- sbin/hv_kvp_daemon/scripts/hv_get_dhcp_info	(revision 0)
-+++ sbin/hv_kvp_daemon/scripts/hv_get_dhcp_info	(working copy)
+--- contrib/hyperv/daemons/scripts/hv_get_dhcp_info	(revision 0)
++++ contrib/hyperv/daemons/scripts/hv_get_dhcp_info	(working copy)
 @@ -0,0 +1,28 @@
 +#!/bin/sh
 +#THIs example script retrieves the DHCP state of a given interface.
@@ -1656,10 +1623,10 @@ Index: sbin/hv_kvp_daemon/scripts/hv_get_dhcp_info
 +echo "Disabled"
 +fi
 +
-Index: sbin/hv_kvp_daemon/scripts/hv_get_dns_info
+Index: contrib/hyperv/daemons/scripts/hv_get_dns_info
 ===================================================================
---- sbin/hv_kvp_daemon/scripts/hv_get_dns_info	(revision 0)
-+++ sbin/hv_kvp_daemon/scripts/hv_get_dns_info	(working copy)
+--- contrib/hyperv/daemons/scripts/hv_get_dns_info	(revision 0)
++++ contrib/hyperv/daemons/scripts/hv_get_dns_info	(working copy)
 @@ -0,0 +1,17 @@
 +#!/bin/sh
 +#this example script parses /etc/resolv.conf to retrive DNS information.
@@ -1678,10 +1645,10 @@ Index: sbin/hv_kvp_daemon/scripts/hv_get_dns_info
 +#fi
 +cat /etc/resolv.conf 2>/dev/null | awk '/^nameserver/ { print $2 }'
 +
-Index: sbin/hv_kvp_daemon/scripts/hv_set_ifconfig
+Index: contrib/hyperv/daemons/scripts/hv_set_ifconfig
 ===================================================================
---- sbin/hv_kvp_daemon/scripts/hv_set_ifconfig	(revision 0)
-+++ sbin/hv_kvp_daemon/scripts/hv_set_ifconfig	(working copy)
+--- contrib/hyperv/daemons/scripts/hv_set_ifconfig	(revision 0)
++++ contrib/hyperv/daemons/scripts/hv_set_ifconfig	(working copy)
 @@ -0,0 +1,83 @@
 +#!/bin/sh
 +
@@ -1766,9 +1733,42 @@ Index: sbin/hv_kvp_daemon/scripts/hv_set_ifconfig
 +	echo Disabled
 +fi
 +echo "Set IP-Injection Success"
+Index: etc/rc.d/Makefile
+===================================================================
+--- etc/rc.d/Makefile	(revision 267674)
++++ etc/rc.d/Makefile	(working copy)
+@@ -54,6 +54,7 @@
+ 	hostid \
+ 	hostid_save \
+ 	hostname \
++	hv_kvpd \
+ 	inetd \
+ 	initrandom \
+ 	ip6addrctl \
+Index: etc/rc.d/hv_kvpd
+===================================================================
+--- etc/rc.d/hv_kvpd	(revision 0)
++++ etc/rc.d/hv_kvpd	(working copy)
+@@ -0,0 +1,16 @@
++#!/bin/sh
++#
++# $FreeBSD: src/etc/rc.d/hv_kvpd $
++#
++
++# PROVIDE: hv_kvpd
++
++. /etc/rc.subr
++
++name="hv_kvp_daemon"
++rcvar=`hv_kvp_daemon`
++command="/usr/sbin/${name}"
++required_dirs="/usr/local/hyperv"
++
++load_rc_config $name
++run_rc_command "$1"
 Index: sys/conf/files.amd64
 ===================================================================
---- sys/conf/files.amd64	(revision 267579)
+--- sys/conf/files.amd64	(revision 267674)
 +++ sys/conf/files.amd64	(working copy)
 @@ -224,6 +224,7 @@
  dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
@@ -1780,7 +1780,7 @@ Index: sys/conf/files.amd64
  dev/hyperv/vmbus/hv_channel_mgmt.c			optional	hyperv
 Index: sys/conf/files.i386
 ===================================================================
---- sys/conf/files.i386	(revision 267579)
+--- sys/conf/files.i386	(revision 267674)
 +++ sys/conf/files.i386	(working copy)
 @@ -215,6 +215,7 @@
  dev/hyperv/netvsc/hv_rndis_filter.c			optional	hyperv
@@ -1792,7 +1792,7 @@ Index: sys/conf/files.i386
  dev/hyperv/vmbus/hv_channel_mgmt.c			optional	hyperv
 Index: sys/dev/hyperv/include/hyperv.h
 ===================================================================
---- sys/dev/hyperv/include/hyperv.h	(revision 267579)
+--- sys/dev/hyperv/include/hyperv.h	(revision 267674)
 +++ sys/dev/hyperv/include/hyperv.h	(working copy)
 @@ -795,5 +795,34 @@
  	return (ret);
@@ -2812,10 +2812,6 @@ Index: sys/dev/hyperv/utilities/hv_kvp.c
 
 Property changes on: sys/dev/hyperv/utilities/hv_kvp.c
 ___________________________________________________________________
-Added: svn:mime-type
-## -0,0 +1 ##
-+text/plain
-\ No newline at end of property
 Added: svn:keywords
 ## -0,0 +1 ##
 +FreeBSD=%H
@@ -2824,9 +2820,13 @@ Added: svn:eol-style
 ## -0,0 +1 ##
 +native
 \ No newline at end of property
+Added: svn:mime-type
+## -0,0 +1 ##
++text/plain
+\ No newline at end of property
 Index: sys/dev/hyperv/utilities/hv_kvp.h
 ===================================================================
---- sys/dev/hyperv/utilities/hv_kvp.h	(revision 267579)
+--- sys/dev/hyperv/utilities/hv_kvp.h	(revision 267674)
 +++ sys/dev/hyperv/utilities/hv_kvp.h	(working copy)
 @@ -1,7 +1,5 @@
  /*-
@@ -3053,7 +3053,7 @@ Index: sys/dev/hyperv/utilities/hv_kvp.h
  #endif /* _KVP_H */
 Index: sys/dev/hyperv/utilities/hv_util.c
 ===================================================================
---- sys/dev/hyperv/utilities/hv_util.c	(revision 267579)
+--- sys/dev/hyperv/utilities/hv_util.c	(revision 267674)
 +++ sys/dev/hyperv/utilities/hv_util.c	(working copy)
 @@ -1,7 +1,5 @@
  /*-
@@ -3396,7 +3396,7 @@ Added: svn:eol-style
 \ No newline at end of property
 Index: sys/modules/hyperv/utilities/Makefile
 ===================================================================
---- sys/modules/hyperv/utilities/Makefile	(revision 267579)
+--- sys/modules/hyperv/utilities/Makefile	(revision 267674)
 +++ sys/modules/hyperv/utilities/Makefile	(working copy)
 @@ -3,7 +3,7 @@
  .PATH:	${.CURDIR}/../../../dev/hyperv/utilities
@@ -3409,26 +3409,53 @@ Index: sys/modules/hyperv/utilities/Makefile
  CFLAGS+= -I${.CURDIR}/../../../dev/hyperv/include \
 Index: usr.sbin/Makefile
 ===================================================================
---- usr.sbin/Makefile	(revision 267579)
+--- usr.sbin/Makefile	(revision 267674)
 +++ usr.sbin/Makefile	(working copy)
 @@ -33,6 +33,7 @@
  	getfmac \
  	getpmac \
  	gstat \
-+	hv_kvp_daemon \
++	hyperv \
  	i2c \
  	ifmcstat \
  	inetd \
-Index: usr.sbin/hv_kvp_daemon/Makefile
+Index: usr.sbin/hyperv/Makefile
 ===================================================================
---- usr.sbin/hv_kvp_daemon/Makefile	(revision 0)
-+++ usr.sbin/hv_kvp_daemon/Makefile	(working copy)
+--- usr.sbin/hyperv/Makefile	(revision 0)
++++ usr.sbin/hyperv/Makefile	(working copy)
+@@ -0,0 +1,7 @@
++# $FreeBSD hyperv-ic Makefile  $
++
++.include <bsd.own.mk>
++
++SUBDIR = daemons 
++
++.include <bsd.subdir.mk>
+
+Property changes on: usr.sbin/hyperv/Makefile
+___________________________________________________________________
+Added: svn:mime-type
+## -0,0 +1 ##
++text/plain
+\ No newline at end of property
+Added: svn:keywords
+## -0,0 +1 ##
++FreeBSD=%H
+\ No newline at end of property
+Added: svn:eol-style
+## -0,0 +1 ##
++native
+\ No newline at end of property
+Index: usr.sbin/hyperv/daemons/Makefile
+===================================================================
+--- usr.sbin/hyperv/daemons/Makefile	(revision 0)
++++ usr.sbin/hyperv/daemons/Makefile	(working copy)
 @@ -0,0 +1,23 @@
 +# $FreeBSD hyperv-ic Makefile  $
 +
 +.include <bsd.own.mk>
 +
-+HV_KVP_DAEMON_DISTDIR?= ${.CURDIR}/../../sbin/hv_kvp_daemon
++HV_KVP_DAEMON_DISTDIR?= ${.CURDIR}/../../../contrib/hyperv/daemons
 +.PATH: ${HV_KVP_DAEMON_DISTDIR} 
 +BINDIR =  /usr/sbin
 +
@@ -3444,11 +3471,11 @@ Index: usr.sbin/hv_kvp_daemon/Makefile
 +	
 +afterinstall:
 +	${SH} ${HV_KVP_DAEMON_DISTDIR}/kvp-install POST-INSTALL	
-+	cp  ${HV_KVP_DAEMON_DISTDIR}/scripts/* /usr/local/hyperv/scripts/
++	${INSTALL} ${COPY} ${HV_KVP_DAEMON_DISTDIR}/scripts/* /usr/local/hyperv/scripts/
 +
 +.include <bsd.prog.mk>
 
-Property changes on: usr.sbin/hv_kvp_daemon/Makefile
+Property changes on: usr.sbin/hyperv/daemons/Makefile
 ___________________________________________________________________
 Added: svn:eol-style
 ## -0,0 +1 ##
